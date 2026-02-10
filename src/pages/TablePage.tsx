@@ -396,9 +396,7 @@ const TablePage = () => {
       <div className="fixed left-2 top-0 h-full w-60 pt-20 ">
         <div className="h-full bg-white/95 backdrop-blur-sm border-r rounded-xl border-purple-200/40">
           <div className="p-4">
-            <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">
-              Tabs
-            </h3>
+            
             <div className="space-y-1">
               {tabs.map((tab) => (
                 <button

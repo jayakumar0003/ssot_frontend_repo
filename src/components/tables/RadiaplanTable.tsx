@@ -373,17 +373,7 @@ export default function RadiaplanTable({ data, selectedAdvertiser }: Props) {
     <div className="rounded-xl overflow-hidden border border-purple-200/40">
       {/* FILTER BAR */}
       <div className="p-4 border-b border-purple-200/40 bg-gradient-to-r from-purple-50 to-pink-50/30">
-        <div className="flex items-center justify-between ">
-          {isFiltered && (
-            <button
-              onClick={clearAllFilters}
-              className="flex items-center gap-1 px-3 py-1.5 text-sm text-purple-600 hover:text-purple-700 hover:bg-purple-100 rounded-lg transition-colors"
-            >
-              <FilterX className="w-4 h-4" />
-              Clear Filters
-            </button>
-          )}
-        </div>
+        
         <div className="flex gap-3 flex-wrap">
           <CustomDropdown
             label={`Agency`}
@@ -510,12 +500,7 @@ export default function RadiaplanTable({ data, selectedAdvertiser }: Props) {
                       <div className="text-lg font-medium text-gray-400">
                         No data matches your filters
                       </div>
-                      <button
-                        onClick={clearAllFilters}
-                        className="px-4 py-2 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors"
-                      >
-                        Clear Filters
-                      </button>
+                      
                     </div>
                   )}
                 </td>
