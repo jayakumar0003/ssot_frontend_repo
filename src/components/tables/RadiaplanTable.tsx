@@ -617,7 +617,7 @@ export default function RadiaplanTable({
       </div>
 
       {/* TABLE */}
-      <div className="overflow-auto max-h-[calc(150vh-300px)]">
+      <div className="overflow-auto max-h-[calc(500vh-260px)] min-h-[300px]">
         <table className="w-full">
           <thead className="sticky top-0 z-10">
             {table.getHeaderGroups().map((hg) => (
