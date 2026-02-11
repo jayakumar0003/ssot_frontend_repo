@@ -87,9 +87,7 @@ const NavPanel = ({
 
             {/* Navigation */}
             <div className="p-4">
-              <h3 className="text-xs font-semibold text-purple-300/70 uppercase tracking-wider mb-3 px-2">
-                Tabs
-              </h3>
+              
 
               <ul className="space-y-1">
                 {navItems.map((item, index) => {
@@ -108,7 +106,9 @@ const NavPanel = ({
                           if (isHome) {
                             navigate("/");
                           } else {
-                            navigate("/table");
+                            navigate("/table", {
+                              state: { activeTab: item.id },
+                            });
                           }
                           onClose();
                         }}
@@ -120,19 +120,9 @@ const NavPanel = ({
                               : "text-purple-200/70 hover:bg-purple-500/10 hover:text-white"
                           }`}
                       >
-                        {/* Indicator dot */}
-                        <div
-                          className={`w-2 h-2 rounded-full mr-3 transition-colors
-                            ${
-                              isActive
-                                ? "bg-purple-400"
-                                : "bg-purple-400/30 group-hover:bg-purple-400"
-                            }`}
-                        />
+                        
 
-                        <span className="flex-1 text-left">
-                          {item.label}
-                        </span>
+                        <span className="flex-1 text-left">{item.label}</span>
                       </button>
                     </motion.li>
                   );

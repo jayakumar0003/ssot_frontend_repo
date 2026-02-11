@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import TablePage from "./pages/TablePage"; // Add this import
 import NotFound from "./pages/NotFound";
+import { DataProvider } from './context/DataContext';
 
 const queryClient = new QueryClient();
 
@@ -15,12 +16,14 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
+      <DataProvider>
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/table" element={<TablePage />} /> {/* Add this route */}
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
+      </DataProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>

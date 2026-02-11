@@ -1,4 +1,4 @@
-// RadiaplanTable.tsx
+// RadiaplanTable.tsx - CORRECTED VERSION
 import { useMemo, useState, useEffect, useRef } from "react";
 import {
   flexRender,
@@ -24,10 +24,11 @@ export type CsvRow = Record<string, string>;
 
 interface Props {
   data: CsvRow[];
-  selectedAdvertiser?: string; // Add this prop
+  selectedAgency?: string;
+  selectedAdvertiser?: string;
 }
 
-// Custom Dropdown Component
+// Custom Dropdown Component (unchanged)
 interface DropdownProps {
   label: string;
   options: string[];
@@ -45,6 +46,7 @@ function CustomDropdown({
 }: DropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -72,15 +74,37 @@ function CustomDropdown({
   };
 
   const handleSelectAll = () => {
-    if (selectedOptions.length === options.length) {
-      onSelectionChange([]);
+    const allFilteredSelected = filteredOptions.every((opt) =>
+      selectedOptions.includes(opt)
+    );
+
+    if (allFilteredSelected) {
+      // remove only filtered options
+      onSelectionChange(
+        selectedOptions.filter((opt) => !filteredOptions.includes(opt))
+      );
     } else {
-      onSelectionChange([...options]);
+      // add only filtered options
+      const newSelection = [
+        ...new Set([...selectedOptions, ...filteredOptions]),
+      ];
+      onSelectionChange(newSelection);
     }
   };
 
+  const filteredOptions = options.filter((option) =>
+    option.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   const isAllSelected =
-    options.length > 0 && selectedOptions.length === options.length;
+    filteredOptions.length > 0 &&
+    filteredOptions.every((opt) => selectedOptions.includes(opt));
+
+  useEffect(() => {
+    if (!isOpen) {
+      setSearchTerm("");
+    }
+  }, [isOpen]);
 
   return (
     <div className="relative inline-block" ref={dropdownRef}>
@@ -122,6 +146,16 @@ function CustomDropdown({
 
       {isOpen && !disabled && (
         <div className="absolute z-50 mt-2 w-72 bg-white border border-purple-200 rounded-xl shadow-xl max-h-64 overflow-y-auto">
+          <div className="p-3 border-b border-purple-100">
+            <input
+              type="text"
+              placeholder="Search..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full px-3 py-2 text-sm border border-purple-200 rounded-lg outline-none focus:ring-2 focus:ring-purple-400"
+            />
+          </div>
+
           <div
             onClick={handleSelectAll}
             className="flex items-center px-4 py-2.5 hover:bg-purple-50 cursor-pointer border-b border-purple-100 font-semibold"
@@ -134,7 +168,7 @@ function CustomDropdown({
 
           <div className="border-t border-purple-100"></div>
 
-          {options.map((option) => (
+          {filteredOptions.map((option) => (
             <div key={option}>
               <div
                 onClick={() => handleToggleOption(option)}
@@ -150,9 +184,9 @@ function CustomDropdown({
             </div>
           ))}
 
-          {options.length === 0 && (
+          {filteredOptions.length === 0 && (
             <div className="px-4 py-2.5 text-sm text-gray-500">
-              No options available
+              No matching results
             </div>
           )}
         </div>
@@ -161,79 +195,213 @@ function CustomDropdown({
   );
 }
 
-export default function RadiaplanTable({ data, selectedAdvertiser }: Props) {
+export default function RadiaplanTable({
+  data,
+  selectedAdvertiser,
+  selectedAgency,
+}: Props) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [selectedAgencies, setSelectedAgencies] = useState<string[]>([]);
   const [selectedAdvertisers, setSelectedAdvertisers] = useState<string[]>([]);
   const [selectedCampaignIds, setSelectedCampaignIds] = useState<string[]>([]);
 
-  // Effect to automatically select the advertiser when prop changes
-  useEffect(() => {
-    if (selectedAdvertiser && data.length > 0) {
-      // Check if this advertiser exists in the data
-      const allAdvertisers = Array.from(
+  // Get ALL unique options from data
+  const allAgencies = useMemo(
+    () =>
+      Array.from(
+        new Set(data.map((d) => d.AGENCY_NAME || "").filter(Boolean))
+      ).sort(),
+    [data]
+  );
+
+  const allAdvertisers = useMemo(
+    () =>
+      Array.from(
         new Set(data.map((d) => d.ADVERTISER_NAME || "").filter(Boolean))
-      );
-      
-      if (allAdvertisers.includes(selectedAdvertiser)) {
-        // Select only this advertiser
-        setSelectedAdvertisers([selectedAdvertiser]);
-        
-        // Also select all agencies and campaigns for this advertiser
-        const advertiserData = data.filter(
-          (row) => row.ADVERTISER_NAME === selectedAdvertiser
-        );
-        
-        const advertiserAgencies = Array.from(
-          new Set(advertiserData.map((d) => d.AGENCY_NAME || "").filter(Boolean))
-        );
-        
-        const advertiserCampaigns = Array.from(
-          new Set(advertiserData.map((d) => d.CAMPAIGN_ID || "").filter(Boolean))
-        );
-        
-        setSelectedAgencies(advertiserAgencies);
-        setSelectedCampaignIds(advertiserCampaigns);
+      ).sort(),
+    [data]
+  );
+
+  const allCampaigns = useMemo(
+    () =>
+      Array.from(
+        new Set(data.map((d) => d.CAMPAIGN_ID || "").filter(Boolean))
+      ).sort(),
+    [data]
+  );
+
+  const handleExportCSV = () => {
+    if (filteredData.length === 0) return;
+
+    // Get all column headers
+    const headers = table
+  .getAllLeafColumns()
+  .map((col) => col.id);
+
+
+    // Convert rows
+    const csvRows = filteredData.map((row) =>
+      headers
+        .map((header) => {
+          const value = row[header] ?? "";
+
+          // Escape double quotes
+          const escaped = String(value).replace(/"/g, '""');
+
+          // Wrap in quotes to handle commas/newlines
+          return `"${escaped}"`;
+        })
+        .join(",")
+    );
+
+    const csvContent = headers.join(",") + "\n" + csvRows.join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+
+    link.href = url;
+    link.download = `radiaplan_export_${new Date()
+      .toISOString()
+      .slice(0, 10)}.csv`;
+
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    URL.revokeObjectURL(url);
+  };
+
+  const handleResetFilters = () => {
+    setSelectedAgencies(allAgencies);
+    setSelectedAdvertisers(allAdvertisers);
+    setSelectedCampaignIds(allCampaigns);
+  };
+
+  // Effect to automatically select values when props change
+  useEffect(() => {
+    if (data.length > 0) {
+      let agenciesToSelect = allAgencies;
+      let advertisersToSelect = allAdvertisers;
+      let campaignsToSelect = allCampaigns;
+
+      // Handle special case: "__AGENCY_ONLY__" means show all advertisers for selected agency
+      if (selectedAdvertiser === "__AGENCY_ONLY__" && selectedAgency) {
+        // Filter by agency only
+        agenciesToSelect = [selectedAgency];
+
+        // Get advertisers for this agency
+        const agencyAdvertisers = Array.from(
+          new Set(
+            data
+              .filter((row) => row.AGENCY_NAME === selectedAgency)
+              .map((d) => d.ADVERTISER_NAME || "")
+              .filter(Boolean)
+          )
+        ).sort();
+        advertisersToSelect = agencyAdvertisers;
+
+        // Get campaigns for this agency
+        const agencyCampaigns = Array.from(
+          new Set(
+            data
+              .filter((row) => row.AGENCY_NAME === selectedAgency)
+              .map((d) => d.CAMPAIGN_ID || "")
+              .filter(Boolean)
+          )
+        ).sort();
+        campaignsToSelect = agencyCampaigns;
       }
-    }
-  }, [selectedAdvertiser, data]);
+      // Handle normal advertiser selection
+      else if (selectedAdvertiser && selectedAdvertiser !== "__AGENCY_ONLY__") {
+        // If both agency and advertiser are selected
+        if (selectedAgency) {
+          agenciesToSelect = [selectedAgency];
+          advertisersToSelect = [selectedAdvertiser];
 
-  // Campaign ID options
-  const campaignOptions = useMemo(() => {
-    let filteredData = data;
-    if (selectedAgencies.length > 0) {
-      filteredData = filteredData.filter((row) =>
-        selectedAgencies.includes(row.AGENCY_NAME || "")
-      );
-    }
-    if (selectedAdvertisers.length > 0) {
-      filteredData = filteredData.filter((row) =>
-        selectedAdvertisers.includes(row.ADVERTISER_NAME || "")
-      );
-    }
-    return Array.from(
-      new Set(filteredData.map((d) => d.CAMPAIGN_ID || "").filter(Boolean))
-    ).sort();
-  }, [data, selectedAgencies, selectedAdvertisers]);
+          // Get campaigns for this specific agency+advertiser combination
+          const specificCampaigns = Array.from(
+            new Set(
+              data
+                .filter(
+                  (row) =>
+                    row.AGENCY_NAME === selectedAgency &&
+                    row.ADVERTISER_NAME === selectedAdvertiser
+                )
+                .map((d) => d.CAMPAIGN_ID || "")
+                .filter(Boolean)
+            )
+          ).sort();
+          campaignsToSelect = specificCampaigns;
+        }
+        // If only advertiser is selected (no agency)
+        else {
+          advertisersToSelect = [selectedAdvertiser];
 
-  // Advertiser options
-  const advertiserOptions = useMemo(() => {
-    let filteredData = data;
-    if (selectedAgencies.length > 0) {
-      filteredData = filteredData.filter((row) =>
-        selectedAgencies.includes(row.AGENCY_NAME || "")
-      );
+          // Get agencies for this advertiser
+          const advertiserAgencies = Array.from(
+            new Set(
+              data
+                .filter((row) => row.ADVERTISER_NAME === selectedAdvertiser)
+                .map((d) => d.AGENCY_NAME || "")
+                .filter(Boolean)
+            )
+          ).sort();
+          agenciesToSelect = advertiserAgencies;
+
+          // Get campaigns for this advertiser
+          const advertiserCampaigns = Array.from(
+            new Set(
+              data
+                .filter((row) => row.ADVERTISER_NAME === selectedAdvertiser)
+                .map((d) => d.CAMPAIGN_ID || "")
+                .filter(Boolean)
+            )
+          ).sort();
+          campaignsToSelect = advertiserCampaigns;
+        }
+      }
+      // Handle agency-only selection (without the __AGENCY_ONLY__ marker)
+      else if (selectedAgency && !selectedAdvertiser) {
+        agenciesToSelect = [selectedAgency];
+
+        // Get advertisers for this agency
+        const agencyAdvertisers = Array.from(
+          new Set(
+            data
+              .filter((row) => row.AGENCY_NAME === selectedAgency)
+              .map((d) => d.ADVERTISER_NAME || "")
+              .filter(Boolean)
+          )
+        ).sort();
+        advertisersToSelect = agencyAdvertisers;
+
+        // Get campaigns for this agency
+        const agencyCampaigns = Array.from(
+          new Set(
+            data
+              .filter((row) => row.AGENCY_NAME === selectedAgency)
+              .map((d) => d.CAMPAIGN_ID || "")
+              .filter(Boolean)
+          )
+        ).sort();
+        campaignsToSelect = agencyCampaigns;
+      }
+
+      setSelectedAgencies(agenciesToSelect);
+      setSelectedAdvertisers(advertisersToSelect);
+      setSelectedCampaignIds(campaignsToSelect);
     }
-    if (selectedCampaignIds.length > 0) {
-      filteredData = filteredData.filter((row) =>
-        selectedCampaignIds.includes(row.CAMPAIGN_ID || "")
-      );
-    }
-    return Array.from(
-      new Set(filteredData.map((d) => d.ADVERTISER_NAME || "").filter(Boolean))
-    ).sort();
-  }, [data, selectedAgencies, selectedCampaignIds]);
+  }, [
+    data,
+    selectedAdvertiser,
+    selectedAgency,
+    allAgencies,
+    allAdvertisers,
+    allCampaigns,
+  ]);
 
   // Agency options
   const agencyOptions = useMemo(() => {
@@ -253,33 +421,56 @@ export default function RadiaplanTable({ data, selectedAdvertiser }: Props) {
     ).sort();
   }, [data, selectedAdvertisers, selectedCampaignIds]);
 
-  // Initialize with all options
-  const initialized = useRef(false);
+  // Advertiser options
+  const advertiserOptions = useMemo(() => {
+    let filteredData = data;
+    if (selectedAgencies.length > 0) {
+      filteredData = filteredData.filter((row) =>
+        selectedAgencies.includes(row.AGENCY_NAME || "")
+      );
+    }
+    if (selectedCampaignIds.length > 0) {
+      filteredData = filteredData.filter((row) =>
+        selectedCampaignIds.includes(row.CAMPAIGN_ID || "")
+      );
+    }
+    return Array.from(
+      new Set(filteredData.map((d) => d.ADVERTISER_NAME || "").filter(Boolean))
+    ).sort();
+  }, [data, selectedAgencies, selectedCampaignIds]);
+
+  // Campaign ID options
+  const campaignOptions = useMemo(() => {
+    let filteredData = data;
+    if (selectedAgencies.length > 0) {
+      filteredData = filteredData.filter((row) =>
+        selectedAgencies.includes(row.AGENCY_NAME || "")
+      );
+    }
+    if (selectedAdvertisers.length > 0) {
+      filteredData = filteredData.filter((row) =>
+        selectedAdvertisers.includes(row.ADVERTISER_NAME || "")
+      );
+    }
+    return Array.from(
+      new Set(filteredData.map((d) => d.CAMPAIGN_ID || "").filter(Boolean))
+    ).sort();
+  }, [data, selectedAgencies, selectedAdvertisers]);
+
+  // Initialize with all options (only when no props are provided)
   useEffect(() => {
-    if (!initialized.current && data.length > 0 && !selectedAdvertiser) {
-      const allAgencies = Array.from(
-        new Set(data.map((d) => d.AGENCY_NAME || "").filter(Boolean))
-      );
-      const allAdvertisers = Array.from(
-        new Set(data.map((d) => d.ADVERTISER_NAME || "").filter(Boolean))
-      );
-      const allCampaigns = Array.from(
-        new Set(data.map((d) => d.CAMPAIGN_ID || "").filter(Boolean))
-      );
+    if (data.length === 0) return;
+  
+    // If no external filters are applied,
+    // always reset to full dataset
+    if (!selectedAdvertiser && !selectedAgency) {
       setSelectedAgencies(allAgencies);
       setSelectedAdvertisers(allAdvertisers);
       setSelectedCampaignIds(allCampaigns);
-      initialized.current = true;
     }
-  }, [data, selectedAdvertiser]);
-
-  // Clear all filters
-  const clearAllFilters = () => {
-    setSelectedAgencies([]);
-    setSelectedAdvertisers([]);
-    setSelectedCampaignIds([]);
-  };
-
+  
+  }, [data, selectedAdvertiser, selectedAgency, allAgencies, allAdvertisers, allCampaigns]);
+  
   // Filter data
   const filteredData = useMemo(() => {
     if (
@@ -345,7 +536,7 @@ export default function RadiaplanTable({ data, selectedAdvertiser }: Props) {
     getPaginationRowModel: getPaginationRowModel(),
     initialState: {
       pagination: {
-        pageSize: 100, // 100 rows per page
+        pageSize: 100,
       },
     },
   });
@@ -353,56 +544,75 @@ export default function RadiaplanTable({ data, selectedAdvertiser }: Props) {
   // Check if filtered
   const isFiltered = useMemo(() => {
     if (data.length === 0) return false;
-    const allAgencies = Array.from(
-      new Set(data.map((d) => d.AGENCY_NAME || "").filter(Boolean))
-    );
-    const allAdvertisers = Array.from(
-      new Set(data.map((d) => d.ADVERTISER_NAME || "").filter(Boolean))
-    );
-    const allCampaigns = Array.from(
-      new Set(data.map((d) => d.CAMPAIGN_ID || "").filter(Boolean))
-    );
     return (
       selectedAgencies.length !== allAgencies.length ||
       selectedAdvertisers.length !== allAdvertisers.length ||
       selectedCampaignIds.length !== allCampaigns.length
     );
-  }, [data, selectedAgencies, selectedAdvertisers, selectedCampaignIds]);
+  }, [
+    data,
+    selectedAgencies,
+    selectedAdvertisers,
+    selectedCampaignIds,
+    allAgencies,
+    allAdvertisers,
+    allCampaigns,
+  ]);
 
   return (
     <div className="rounded-xl overflow-hidden border border-purple-200/40">
       {/* FILTER BAR */}
       <div className="p-4 border-b border-purple-200/40 bg-gradient-to-r from-purple-50 to-pink-50/30">
-        
-        <div className="flex gap-3 flex-wrap">
-          <CustomDropdown
-            label={`Agency`}
-            options={agencyOptions}
-            selectedOptions={selectedAgencies}
-            onSelectionChange={setSelectedAgencies}
-            disabled={
-              selectedAdvertisers.length === 0 ||
-              selectedCampaignIds.length === 0
-            }
-          />
-          <CustomDropdown
-            label={`Advertiser`}
-            options={advertiserOptions}
-            selectedOptions={selectedAdvertisers}
-            onSelectionChange={setSelectedAdvertisers}
-            disabled={
-              selectedAgencies.length === 0 || selectedCampaignIds.length === 0
-            }
-          />
-          <CustomDropdown
-            label={`Campaign`}
-            options={campaignOptions}
-            selectedOptions={selectedCampaignIds}
-            onSelectionChange={setSelectedCampaignIds}
-            disabled={
-              selectedAgencies.length === 0 || selectedAdvertisers.length === 0
-            }
-          />
+        <div className="flex justify-between items-center">
+          <div className="flex gap-3 flex-wrap">
+            <CustomDropdown
+              label={`Agency`}
+              options={agencyOptions}
+              selectedOptions={selectedAgencies}
+              onSelectionChange={setSelectedAgencies}
+              disabled={
+                selectedAdvertisers.length === 0 ||
+                selectedCampaignIds.length === 0
+              }
+            />
+            <CustomDropdown
+              label={`Advertiser`}
+              options={advertiserOptions}
+              selectedOptions={selectedAdvertisers}
+              onSelectionChange={setSelectedAdvertisers}
+              disabled={
+                selectedAgencies.length === 0 ||
+                selectedCampaignIds.length === 0
+              }
+            />
+            <CustomDropdown
+              label={`Campaign`}
+              options={campaignOptions}
+              selectedOptions={selectedCampaignIds}
+              onSelectionChange={setSelectedCampaignIds}
+              disabled={
+                selectedAgencies.length === 0 ||
+                selectedAdvertisers.length === 0
+              }
+            />
+          </div>
+
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleResetFilters}
+              className="px-4 py-2 bg-white border-2 border-purple-300 rounded-xl hover:bg-purple-50 transition-all text-sm font-medium"
+            >
+              Reset
+            </button>
+
+            <button
+              onClick={handleExportCSV}
+              disabled={filteredData.length === 0}
+              className="px-4 py-2.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl shadow-sm hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-all text-sm font-medium"
+            >
+              Export CSV
+            </button>
+          </div>
         </div>
       </div>
 
@@ -411,10 +621,7 @@ export default function RadiaplanTable({ data, selectedAdvertiser }: Props) {
         <table className="w-full">
           <thead className="sticky top-0 z-10">
             {table.getHeaderGroups().map((hg) => (
-              <tr
-                key={hg.id}
-                className="bg-gradient-to-r from-purple-600 to-pink-600"
-              >
+              <tr key={hg.id} className="bg-purple-600 ">
                 {hg.headers.map((header, index) => (
                   <th
                     key={header.id}
@@ -500,7 +707,6 @@ export default function RadiaplanTable({ data, selectedAdvertiser }: Props) {
                       <div className="text-lg font-medium text-gray-400">
                         No data matches your filters
                       </div>
-                      
                     </div>
                   )}
                 </td>

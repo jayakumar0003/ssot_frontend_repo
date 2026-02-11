@@ -1,115 +1,98 @@
 import { useRef, useState, useEffect } from "react";
-import {
-  ChevronDown,
-  Check,
-  Sparkles,
-  BarChart3,
-  Globe,
-  TrendingUp,
-  ArrowRight,
-} from "lucide-react";
+import { ChevronDown, Check, ArrowRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import bg from "../assets/bg-image.png";
-
-const advertisers = [
-  { name: "AARP - US", icon: Globe },
-  { name: "Abbott Laboratories - US", icon: Globe },
-  { name: "Abbott Lingo - US", icon: Globe },
-  { name: "Airbnb - US", icon: Globe },
-  { name: "Allianz - US", icon: Globe },
-  { name: "American Airlines - US", icon: Globe },
-  { name: "Amtrak - US", icon: Globe },
-  { name: "Anker Innovations Technology - US", icon: Globe },
-  { name: "Athletic Greens - US", icon: Globe },
-  { name: "Audemars Piguet - US", icon: Globe },
-  { name: "Audible.com", icon: Globe },
-  { name: "Avis Budget Group - US", icon: Globe },
-  { name: "BP - US", icon: Globe },
-  { name: "Bausch Health - US", icon: Globe },
-  { name: "BlackRock - US", icon: Globe },
-  { name: "Boots - US", icon: Globe },
-  { name: "Caterpillar - US", icon: Globe },
-  { name: "Chevron - US", icon: Globe },
-  { name: "Church & Dwight - US", icon: Globe },
-  { name: "Church's Texas Chicken - US", icon: Globe },
-  { name: "Circle K - US", icon: Globe },
-  { name: "Citizens Bank - US", icon: Globe },
-  { name: "Coinbase - US", icon: Globe },
-  { name: "Deloitte - US", icon: Globe },
-  { name: "Denny's - US", icon: Globe },
-  { name: "Deutsche Lufthansa - US", icon: Globe },
-  { name: "Discover", icon: Globe },
-  { name: "EA Games - US", icon: Globe },
-  { name: "Ecolab - US", icon: Globe },
-  { name: "Ernst & Young - US", icon: Globe },
-  { name: "Essilor - US", icon: Globe },
-  { name: "Financial Times - US", icon: Globe },
-  { name: "Ford - US", icon: Globe },
-  { name: "Foundation to Combat Anti-Semitism - US", icon: Globe },
-  { name: "Genentech - US", icon: Globe },
-  { name: "Google - US", icon: Globe },
-  { name: "Goosehead - US", icon: Globe },
-  { name: "Harley-Davidson - US", icon: Globe },
-  { name: "IBM - US", icon: Globe },
-  { name: "INEOS Grenadier - US", icon: Globe },
-  { name: "John Deere - US", icon: Globe },
-  { name: "Johnson & Johnson - US", icon: Globe },
-  { name: "Lotus Bakeries - US", icon: Globe },
-  { name: "Lucchese Boot Company - US", icon: Globe },
-  { name: "Lufthansa - US", icon: Globe },
-  { name: "Marlette Funding - Best Egg", icon: Globe },
-  { name: "Mars - US", icon: Globe },
-  { name: "Mas+ - US", icon: Globe },
-  { name: "Merlin - US", icon: Globe },
-  { name: "Mizkan - US", icon: Globe },
-  { name: "NBC Universal - US", icon: Globe },
-  { name: "Nationwide Mutual Insurance - US", icon: Globe },
-  { name: "Nestle - US", icon: Globe },
-  { name: "Neurocrine - US", icon: Globe },
-  { name: "New York Stock Exchange - US", icon: Globe },
-  { name: "Nickelodeon - US", icon: Globe },
-  { name: "Norwegian Cruise Line - US", icon: Globe },
-  { name: "Otsuka Lundbeck - US", icon: Globe },
-  { name: "Otsuka Pharmaceutical - US", icon: Globe },
-  { name: "PVH - US", icon: Globe },
-  { name: "Pella - US", icon: Globe },
-  { name: "PricewaterhouseCoopers (PwC) - US", icon: Globe },
-  { name: "Qualcomm - UK", icon: Globe },
-  { name: "Richemont - US", icon: Globe },
-  { name: "Scana - US", icon: Globe },
-  { name: "SeatGeek - US", icon: Globe },
-  { name: "Test - AU", icon: Globe },
-  { name: "Test ADvertiser", icon: Globe },
-  { name: "The Cheesecake Factory - US", icon: Globe },
-  { name: "The TJX Companies - US", icon: Globe },
-  { name: "Tootsie Roll Industries - US", icon: Globe },
-  { name: "TruGreen - US", icon: Globe },
-  { name: "Tyson Foods - US", icon: Globe },
-  { name: "Unilock - US", icon: Globe },
-  { name: "United Parcel Service (UPS) - US", icon: Globe },
-  { name: "VSP Vision Care - US", icon: Globe },
-  { name: "Volvo - US", icon: Globe },
-  { name: "Whyte & MacKay - US", icon: Globe },
-  { name: "Zespri - US", icon: Globe },
-  { name: "eHarmony - US", icon: Globe },
-];
-
+import bg from "../assets/bg-image-2.png";
+import { fetchRadiaPlanApi } from "@/api/radiaplan.api";
+import { CsvRow } from "@/components/tables/RadiaplanTable";
+import { useData } from "@/context/DataContext";
 
 const HeroSection = () => {
   const navigate = useNavigate();
-  const [selected, setSelected] = useState("");
-  const [isOpen, setIsOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const { radiaPlanData: contextData, setRadiaPlanData } = useData();
 
-  // ✅ Correct side-effect handling
+  // Set "All Agencies" as default (empty string represents All Agencies)
+  const [selectedAgency, setSelectedAgency] = useState("");
+  // Don't select any advertiser by default
+  const [selectedAdvertiser, setSelectedAdvertiser] = useState("");
+  const [isAgencyOpen, setIsAgencyOpen] = useState(false);
+  const [isAdvertiserOpen, setIsAdvertiserOpen] = useState(false);
+  const agencyDropdownRef = useRef<HTMLDivElement>(null);
+  const advertiserDropdownRef = useRef<HTMLDivElement>(null);
+
+  // State for fetched data
+  const [agencies, setAgencies] = useState<string[]>([]);
+  const [advertisers, setAdvertisers] = useState<string[]>([]);
+  const [allAdvertisers, setAllAdvertisers] = useState<string[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [fetchedData, setFetchedData] = useState<CsvRow[]>([]);
+
+  const [agencySearch, setAgencySearch] = useState("");
+  const [advertiserSearch, setAdvertiserSearch] = useState("");
+
+  const filteredAgencies = agencies.filter((agency) =>
+    agency.toLowerCase().includes(agencySearch.toLowerCase())
+  );
+
+  const filteredAdvertisers = advertisers.filter((advertiser) =>
+    advertiser.toLowerCase().includes(advertiserSearch.toLowerCase())
+  );
+
+  // Add this ref to track if data was already fetched
+  const hasFetchedData = useRef(false);
+
+  // Fetch data on component mount
+  useEffect(() => {
+    // Only fetch if we haven't fetched before
+    if (!hasFetchedData.current) {
+      fetchData();
+      hasFetchedData.current = true;
+    }
+  }, []);
+
+  // Filter advertisers when agency is selected
+  useEffect(() => {
+    if (selectedAgency && fetchedData.length > 0) {
+      const filteredData = fetchedData.filter(
+        (row) => row.AGENCY_NAME === selectedAgency
+      );
+
+      const agencyAdvertisers = Array.from(
+        new Set(
+          filteredData.map((d) => d.ADVERTISER_NAME || "").filter(Boolean)
+        )
+      ).sort();
+
+      setAdvertisers(agencyAdvertisers);
+
+      // Reset selected advertiser if it's not in the new list
+      if (
+        selectedAdvertiser &&
+        !agencyAdvertisers.includes(selectedAdvertiser)
+      ) {
+        setSelectedAdvertiser("");
+      }
+    } else if (fetchedData.length > 0) {
+      // If "All Agencies" is selected or no agency selected, show all advertisers
+      setAdvertisers(allAdvertisers);
+    }
+  }, [selectedAgency, fetchedData, allAdvertisers]);
+
+  // Click outside handlers
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node)
+        agencyDropdownRef.current &&
+        !agencyDropdownRef.current.contains(event.target as Node)
       ) {
-        setIsOpen(false);
+        setIsAgencyOpen(false);
+      }
+      if (
+        advertiserDropdownRef.current &&
+        !advertiserDropdownRef.current.contains(event.target as Node)
+      ) {
+        setIsAdvertiserOpen(false);
       }
     };
 
@@ -117,14 +100,110 @@ const HeroSection = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // Fetch data from API
+  const fetchData = async () => {
+    // Check if data is already loaded in context
+    if (contextData.length > 0) {
+      console.log("Using cached data from context");
+      useCachedData(contextData);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const data: CsvRow[] = await fetchRadiaPlanApi();
+      setFetchedData(data);
+      setRadiaPlanData(data);
+
+      // Extract unique agencies and advertisers
+      extractAndSetData(data);
+      setError(null);
+    } catch (err) {
+      setError("Failed to load data. Please try again later.");
+      console.error("Error fetching data:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Helper function to use cached data
+  const useCachedData = (data: CsvRow[]) => {
+    setFetchedData(data);
+    extractAndSetData(data);
+    setLoading(false);
+  };
+
+  // Helper function to extract data
+  const extractAndSetData = (data: CsvRow[]) => {
+    const uniqueAgencies = Array.from(
+      new Set(data.map((d) => d.AGENCY_NAME || "").filter(Boolean))
+    ).sort();
+
+    const uniqueAdvertisers = Array.from(
+      new Set(data.map((d) => d.ADVERTISER_NAME || "").filter(Boolean))
+    ).sort();
+
+    setAgencies(uniqueAgencies);
+    setAllAdvertisers(uniqueAdvertisers);
+    setAdvertisers(uniqueAdvertisers);
+  };
+
+  // Handle Go button click
   const handleGo = () => {
-    if (selected) {
-      // Pass the selected advertiser as state in navigation
-      navigate("/table", { 
-        state: { 
-          selectedAdvertiser: selected 
-        } 
-      });
+    if (loading) return;
+
+    // Create navigation state
+    const navState: any = {};
+
+    // If agency is selected but advertiser is not, pass "__AGENCY_ONLY__" as advertiser
+    if (selectedAgency && !selectedAdvertiser) {
+      navState.selectedAdvertiser = "__AGENCY_ONLY__";
+      navState.agencyFilter = selectedAgency; // Pass the agency name separately
+    }
+    // If advertiser is selected
+    else if (selectedAdvertiser) {
+      navState.selectedAdvertiser = selectedAdvertiser;
+    }
+    // If nothing is selected (both are "All")
+    else {
+      navState.selectedAdvertiser = ""; // Empty means show all
+    }
+
+    navigate("/table", {
+      state: navState,
+    });
+  };
+
+  const handleAgencySelect = (agency: string) => {
+    setSelectedAgency(agency);
+    setAgencySearch(""); // reset search
+    setIsAgencyOpen(false);
+  };
+
+  const handleAdvertiserSelect = (advertiser: string) => {
+    setSelectedAdvertiser(advertiser);
+    setAdvertiserSearch(""); // reset search
+    setIsAdvertiserOpen(false);
+  };
+
+  const handleRetry = () => {
+    setError(null);
+    fetchData();
+  };
+
+  // Determine if Go button should be enabled
+  const isGoButtonEnabled = !loading && fetchedData.length > 0;
+
+  // Helper function for display text
+  const getDisplayText = () => {
+    if (!selectedAdvertiser && !selectedAgency) {
+      return "Will show all data in table";
+    } else if (!selectedAdvertiser && selectedAgency) {
+      return `Will show all advertisers for ${selectedAgency}`;
+    } else if (selectedAdvertiser && !selectedAgency) {
+      return `Will show ${selectedAdvertiser} data across all agencies`;
+    } else {
+      return `Will show ${selectedAdvertiser} data for ${selectedAgency}`;
     }
   };
 
@@ -137,96 +216,236 @@ const HeroSection = () => {
             className="absolute inset-0 bg-cover bg-center bg-no-repeat"
             style={{ backgroundImage: `url(${bg})` }}
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-purple-300/30 via-purple-500/30 to-purple-800/80" />
+          <div className="absolute inset-0 bg-gradient-to-r from-purple-400/60 via-purple-500/60 to-purple-800/80" />
         </div>
 
         {/* Content */}
         <div className="container mx-auto w-full relative z-10">
-          <div className="flex justify-end mb-40">
+          <div className="flex justify-center mt-16 mb-40">
             <motion.div
               initial={{ opacity: 0, x: 50 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.8, ease: "easeOut" }}
-              className="w-full max-w-md lg:max-w-lg -translate-y-16"
+              className="w-full max-w-md lg:max-w-lg -translate-y-10"
             >
-              <p className="text-purple-200 font-semibold tracking-wide text-lg mb-1">
-                Welcome To 
+              {/* Centered Welcome Text */}
+              <p className="text-purple-200 font-semibold tracking-wide text-lg mt-6 text-center">
+                Welcome To
               </p>
 
-              <h1 className="text-7xl md:text-8xl lg:text-9xl font-bold mb-6 text-white leading-none">
+              {/* Centered SSOT Title */}
+              <h1 className="text-6xl md:text-8xl lg:text-9xl font-bold mb-6 text-white leading-none text-center">
                 SSOT
               </h1>
 
-              <p className="text-white font-medium text-2xl mb-4">
-                Select your Advertiser
+              {/* Centered Subtitle */}
+              <p className="text-white font-semibold text-xl md:text-2xl mb-8 text-center tracking-wide">
+                Select your Agency & Advertiser
               </p>
 
-              {/* Dropdown */}
-              <div className="relative" ref={dropdownRef}>
-                <div className="flex flex-col sm:flex-row gap-4">
-                  <div className="flex-1 relative">
-                    <button
-                      onClick={() => setIsOpen(!isOpen)}
-                      className="w-full flex items-center justify-between px-5 py-4 rounded-xl bg-gray-900/90 backdrop-blur-sm border border-purple-400/40 text-white hover:bg-gray-800/90 hover:border-purple-400/60 transition-all"
-                    >
-                      <span
-                        className={
-                          selected ? "font-medium" : "text-purple-200/80"
-                        }
-                      >
-                        {selected || "Choose advertiser..."}
-                      </span>
-                      <ChevronDown
-                        className={`w-5 h-5 text-purple-300 transition-transform ${
-                          isOpen ? "rotate-180" : ""
-                        }`}
-                      />
-                    </button>
-
-                    <AnimatePresence>
-                      {isOpen && (
-                        <motion.div
-                          initial={{ opacity: 0, y: -8, scale: 0.98 }}
-                          animate={{ opacity: 1, y: 0, scale: 1 }}
-                          exit={{ opacity: 0, y: -8, scale: 0.98 }}
-                          transition={{ duration: 0.2 }}
-                          className="absolute top-full translate-y-[-6px] w-full rounded-xl bg-gray-900 border border-purple-500/40 shadow-2xl z-[999] overflow-hidden"
-                        >
-                          <div className="max-h-[35vh] overflow-y-auto">
-                            {advertisers.map(({ name }) => (
-                              <button
-                                key={name}
-                                onClick={() => {
-                                  setSelected(name);
-                                  setIsOpen(false);
-                                }}
-                                className="w-full flex items-center gap-3 px-4 py-3.5 text-white hover:bg-purple-500/20 transition border-b border-purple-500/20 last:border-none"
-                              >
-                                <span className="flex-1 text-left text-sm">
-                                  {name}
-                                </span>
-                                {selected === name && (
-                                  <Check className="w-4 h-4 text-purple-300" />
-                                )}
-                              </button>
-                            ))}
-                          </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
-
-                  <motion.button
-                    onClick={handleGo}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    disabled={!selected}
-                    className="px-8 py-4 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
+              {/* Error message */}
+              {error && (
+                <div className="mb-4 p-3 bg-red-500/20 border border-red-500/40 rounded-xl">
+                  <p className="text-red-200 text-sm">{error}</p>
+                  <button
+                    onClick={handleRetry}
+                    className="mt-2 px-3 py-1 bg-red-500/30 text-white text-xs rounded-lg hover:bg-red-500/40 transition-colors"
                   >
-                    Go
-                    <ArrowRight className="w-4 h-4" />
-                  </motion.button>
+                    Retry
+                  </button>
                 </div>
+              )}
+
+              {/* Dropdowns in a row */}
+              <div className="flex flex-col md:flex-row gap-6 items-end mb-6">
+              {/* <div className="bg-white/5 backdrop-blur-sm p-6 rounded-2xl border border-white/10"> */}
+                {/* Agency Dropdown */}
+                <div className="relative flex-1" ref={agencyDropdownRef}>
+                  <div className="mb-2">
+                    <label className="text-white font-medium text-sm">
+                      Agency
+                    </label>
+                  </div>
+                  <button
+                    onClick={() => setIsAgencyOpen(!isAgencyOpen)}
+                    disabled={loading}
+                    className="w-full flex items-center justify-between px-5 py-3 rounded-xl bg-gray-900/90 backdrop-blur-sm border border-purple-400/40 text-white hover:bg-gray-800/90 hover:border-purple-400/60 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <span
+                      className={
+                        selectedAgency
+                          ? "font-medium text-sm md:text-base"
+                          : "text-purple-200/80 text-sm md:text-base"
+                      }
+                    >
+                      {loading
+                        ? "Loading..."
+                        : selectedAgency || "All Agencies"}
+                    </span>
+                    <ChevronDown
+                      className={`w-5 h-5 text-purple-300 transition-transform ${
+                        isAgencyOpen ? "rotate-180" : ""
+                      }`}
+                    />
+                  </button>
+
+                  <AnimatePresence>
+                    {isAgencyOpen && !loading && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -8, scale: 0.98 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: -8, scale: 0.98 }}
+                        transition={{ duration: 0.2 }}
+                        className="absolute top-full translate-y-[-6px] w-full rounded-xl bg-gray-900 border border-purple-500/40 shadow-2xl z-[999] overflow-hidden"
+                      >
+                        <div className="max-h-[35vh] overflow-y-auto">
+                          {/* Option to clear agency selection (All Agencies) */}
+                          <div className="p-3 border-b border-purple-500/20">
+                            <input
+                              type="text"
+                              placeholder="Search agency..."
+                              value={agencySearch}
+                              onChange={(e) => setAgencySearch(e.target.value)}
+                              className="w-full px-3 py-2 rounded-lg bg-gray-800 text-white text-sm outline-none border border-purple-500/30 focus:border-purple-400"
+                            />
+                          </div>
+                          <button
+                            onClick={() => handleAgencySelect("")}
+                            className="w-full flex items-center gap-3 px-4 py-3.5 text-white hover:bg-purple-500/20 transition border-b border-purple-500/20"
+                          >
+                            <span className="flex-1 text-left text-sm">
+                              All Agencies
+                            </span>
+                            {!selectedAgency && (
+                              <Check className="w-4 h-4 text-purple-300" />
+                            )}
+                          </button>
+
+                          {filteredAgencies.map((agency) => (
+                            <button
+                              key={agency}
+                              onClick={() => handleAgencySelect(agency)}
+                              className="w-full flex items-center gap-3 px-4 py-3.5 text-white hover:bg-purple-500/20 transition border-b border-purple-500/20 last:border-none"
+                            >
+                              <span className="flex-1 text-left text-sm">
+                                {agency}
+                              </span>
+                              {selectedAgency === agency && (
+                                <Check className="w-4 h-4 text-purple-300" />
+                              )}
+                            </button>
+                          ))}
+
+                          {agencies.length === 0 && !loading && (
+                            <div className="px-4 py-3.5 text-purple-200/80 text-sm">
+                              No agencies found
+                            </div>
+                          )}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+
+                {/* Advertiser Dropdown */}
+                <div className="relative flex-1" ref={advertiserDropdownRef}>
+                  <div className="mb-2">
+                    <label className="text-white font-medium text-sm">
+                      Advertiser
+                    </label>
+                  </div>
+                  <button
+                    onClick={() => setIsAdvertiserOpen(!isAdvertiserOpen)}
+                    disabled={loading || advertisers.length === 0}
+                    className="w-full flex items-center justify-between px-5 py-3 rounded-xl bg-gray-900/90 backdrop-blur-sm border border-purple-400/40 text-white hover:bg-gray-800/90 hover:border-purple-400/60 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <span
+                      className={
+                        selectedAgency
+                          ? "font-medium text-sm md:text-base"
+                          : "text-purple-200/80 text-sm md:text-base"
+                      }
+                    >
+                      {loading
+                        ? "Loading..."
+                        : advertisers.length === 0
+                        ? "No advertisers"
+                        : selectedAdvertiser || "All Advertisers"}
+                    </span>
+                    <ChevronDown
+                      className={`w-5 h-5 text-purple-300 transition-transform ${
+                        isAdvertiserOpen ? "rotate-180" : ""
+                      }`}
+                    />
+                  </button>
+
+                  <AnimatePresence>
+                    {isAdvertiserOpen && !loading && advertisers.length > 0 && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -8, scale: 0.98 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: -8, scale: 0.98 }}
+                        transition={{ duration: 0.2 }}
+                        className="absolute top-full translate-y-[-6px] w-full rounded-xl bg-gray-900 border border-purple-500/40 shadow-2xl z-[999] overflow-hidden"
+                      >
+                        <div className="max-h-[35vh] overflow-y-auto">
+                          {/* Option for All Advertisers */}
+                          <div className="p-3 border-b border-purple-500/20">
+                            <input
+                              type="text"
+                              placeholder="Search advertiser..."
+                              value={advertiserSearch}
+                              onChange={(e) =>
+                                setAdvertiserSearch(e.target.value)
+                              }
+                              className="w-full px-3 py-2 rounded-lg bg-gray-800 text-white text-sm outline-none border border-purple-500/30 focus:border-purple-400"
+                            />
+                          </div>
+                          <button
+                            onClick={() => handleAdvertiserSelect("")}
+                            className="w-full flex items-center gap-3 px-4 py-3.5 text-white hover:bg-purple-500/20 transition border-b border-purple-500/20"
+                          >
+                            <span className="flex-1 text-left text-sm">
+                              All Advertisers
+                            </span>
+                            {!selectedAdvertiser && (
+                              <Check className="w-4 h-4 text-purple-300" />
+                            )}
+                          </button>
+
+                          {filteredAdvertisers.map((advertiser) => (
+                            <button
+                              key={advertiser}
+                              onClick={() => handleAdvertiserSelect(advertiser)}
+                              className="w-full flex items-center gap-3 px-4 py-3.5 text-white hover:bg-purple-500/20 transition border-b border-purple-500/20 last:border-none"
+                            >
+                              <span className="flex-1 text-left text-sm">
+                                {advertiser}
+                              </span>
+                              {selectedAdvertiser === advertiser && (
+                                <Check className="w-4 h-4 text-purple-300" />
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </div>
+
+              {/* Go Button below dropdowns */}
+              <div className="pt-2">
+                <motion.button
+                  onClick={handleGo}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  disabled={!isGoButtonEnabled}
+                  className="w-full px-8 py-3.5 rounded-xl bg-gradient-to-r from-purple-800 to-pink-600 text-white font-semibold text-base flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed hover:opacity-90 transition-all"
+                >
+                  {loading ? "Loading..." : "Go"}
+                  <ArrowRight className="w-4 h-4" />
+                </motion.button>
               </div>
             </motion.div>
           </div>

@@ -96,6 +96,7 @@ function CustomDropdown({
 }: DropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -123,15 +124,37 @@ function CustomDropdown({
   };
 
   const handleSelectAll = () => {
-    if (selectedOptions.length === options.length) {
-      onSelectionChange([]);
+    const allFilteredSelected = filteredOptions.every((opt) =>
+      selectedOptions.includes(opt)
+    );
+
+    if (allFilteredSelected) {
+      // remove only filtered options
+      onSelectionChange(
+        selectedOptions.filter((opt) => !filteredOptions.includes(opt))
+      );
     } else {
-      onSelectionChange([...options]);
+      // add only filtered options
+      const newSelection = [
+        ...new Set([...selectedOptions, ...filteredOptions]),
+      ];
+      onSelectionChange(newSelection);
     }
   };
 
+  const filteredOptions = options.filter((option) =>
+    option.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   const isAllSelected =
-    options.length > 0 && selectedOptions.length === options.length;
+    filteredOptions.length > 0 &&
+    filteredOptions.every((opt) => selectedOptions.includes(opt));
+
+  useEffect(() => {
+    if (!isOpen) {
+      setSearchTerm("");
+    }
+  }, [isOpen]);
 
   return (
     <div className="relative inline-block" ref={dropdownRef}>
@@ -173,6 +196,16 @@ function CustomDropdown({
 
       {isOpen && !disabled && (
         <div className="absolute z-50 mt-2 w-72 bg-white border border-purple-200 rounded-xl shadow-xl max-h-64 overflow-y-auto">
+          <div className="p-3 border-b border-purple-100">
+            <input
+              type="text"
+              placeholder="Search..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full px-3 py-2 text-sm border border-purple-200 rounded-lg outline-none focus:ring-2 focus:ring-purple-400"
+            />
+          </div>
+
           <div
             onClick={handleSelectAll}
             className="flex items-center px-4 py-2.5 hover:bg-purple-50 cursor-pointer border-b border-purple-100 font-semibold"
@@ -185,7 +218,7 @@ function CustomDropdown({
 
           <div className="border-t border-purple-100"></div>
 
-          {options.map((option) => (
+          {filteredOptions.map((option) => (
             <div key={option}>
               <div
                 onClick={() => handleToggleOption(option)}
@@ -201,9 +234,9 @@ function CustomDropdown({
             </div>
           ))}
 
-          {options.length === 0 && (
+          {filteredOptions.length === 0 && (
             <div className="px-4 py-2.5 text-sm text-gray-500">
-              No options available
+              No matching results
             </div>
           )}
         </div>
@@ -211,6 +244,7 @@ function CustomDropdown({
     </div>
   );
 }
+const HIDDEN_COLUMNS = ["AGENCY_NAME", "ADVERTISER_NAME", "CAMPAIGN_ID"];
 
 export default function TargetingAndAnalyticsTable({
   data,
@@ -226,6 +260,69 @@ export default function TargetingAndAnalyticsTable({
   // Form dialog state
   const [editMode, setEditMode] = useState<EditMode>(null);
   const [formData, setFormData] = useState<CsvRow>({});
+  const [isSaving, setIsSaving] = useState(false);
+
+  const handleResetFilters = () => {
+    setSelectedAgencies(allAgencies);
+    setSelectedAdvertisers(allAdvertisers);
+    setSelectedCampaignIds(allCampaigns);
+  };
+
+  const handleExportCSV = () => {
+    if (filteredData.length === 0) return;
+
+    const headers = table.getAllLeafColumns().map((col) => col.id);
+
+    const csvRows = filteredData.map((row) =>
+      headers
+        .map((header) => {
+          const value = row[header] ?? "";
+          const escaped = String(value).replace(/"/g, '""');
+          return `"${escaped}"`;
+        })
+        .join(",")
+    );
+
+    const csvContent = headers.join(",") + "\n" + csvRows.join("\n");
+
+    const blob = new Blob([csvContent], {
+      type: "text/csv;charset=utf-8;",
+    });
+
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+
+    link.href = url;
+    link.download = `targeting_analytics_export_${new Date()
+      .toISOString()
+      .slice(0, 10)}.csv`;
+
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    URL.revokeObjectURL(url);
+  };
+
+  const allAgencies = useMemo(
+    () =>
+      Array.from(new Set(data.map((d) => d.AGENCY_NAME || "").filter(Boolean))),
+    [data]
+  );
+
+  const allAdvertisers = useMemo(
+    () =>
+      Array.from(
+        new Set(data.map((d) => d.ADVERTISER_NAME || "").filter(Boolean))
+      ),
+    [data]
+  );
+
+  const allCampaigns = useMemo(
+    () =>
+      Array.from(new Set(data.map((d) => d.CAMPAIGN_ID || "").filter(Boolean))),
+    [data]
+  );
 
   // Campaign ID options
   const campaignOptions = useMemo(() => {
@@ -282,24 +379,13 @@ export default function TargetingAndAnalyticsTable({
   }, [data, selectedAdvertisers, selectedCampaignIds]);
 
   // Initialize with all options
-  const initialized = useRef(false);
   useEffect(() => {
-    if (!initialized.current && data.length > 0) {
-      const allAgencies = Array.from(
-        new Set(data.map((d) => d.AGENCY_NAME || "").filter(Boolean))
-      );
-      const allAdvertisers = Array.from(
-        new Set(data.map((d) => d.ADVERTISER_NAME || "").filter(Boolean))
-      );
-      const allCampaigns = Array.from(
-        new Set(data.map((d) => d.CAMPAIGN_ID || "").filter(Boolean))
-      );
+    if (data.length > 0) {
       setSelectedAgencies(allAgencies);
       setSelectedAdvertisers(allAdvertisers);
       setSelectedCampaignIds(allCampaigns);
-      initialized.current = true;
     }
-  }, [data]);
+  }, [data, allAgencies, allAdvertisers, allCampaigns]);
 
   // Clear all filters
   const clearAllFilters = () => {
@@ -411,6 +497,18 @@ export default function TargetingAndAnalyticsTable({
     }));
   }, [data]);
 
+  useEffect(() => {
+    if (columns.length > 0) {
+      const hiddenState: VisibilityState = {};
+
+      HIDDEN_COLUMNS.forEach((col) => {
+        hiddenState[col] = false; // false = hidden
+      });
+
+      setColumnVisibility(hiddenState);
+    }
+  }, [columns]);
+
   // Create table with pagination
   const table = useReactTable({
     data: filteredData,
@@ -431,16 +529,20 @@ export default function TargetingAndAnalyticsTable({
   // Handle form submission
   const handleSubmit = async () => {
     try {
+      setIsSaving(true);
+
       if (editMode === "PACKAGE") {
         await onUpdateByPackage(formData);
       } else if (editMode === "PACKAGE_AND_PLACEMENT") {
         await onUpdateByPackageAndPlacement(formData);
       }
+
       setEditMode(null);
       setFormData({});
     } catch (error) {
       console.error("Error submitting data:", error);
-      // You can add toast notification here if needed
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -448,36 +550,58 @@ export default function TargetingAndAnalyticsTable({
     <div className="rounded-xl overflow-hidden border border-purple-200/40">
       {/* FILTER BAR */}
       <div className="p-4 border-b border-purple-200/40 bg-gradient-to-r from-purple-50 to-pink-50/30">
-        
-        <div className="flex gap-3 flex-wrap">
-          <CustomDropdown
-            label={`Agency`}
-            options={agencyOptions}
-            selectedOptions={selectedAgencies}
-            onSelectionChange={setSelectedAgencies}
-            disabled={
-              selectedAdvertisers.length === 0 ||
-              selectedCampaignIds.length === 0
-            }
-          />
-          <CustomDropdown
-            label={`Advertiser`}
-            options={advertiserOptions}
-            selectedOptions={selectedAdvertisers}
-            onSelectionChange={setSelectedAdvertisers}
-            disabled={
-              selectedAgencies.length === 0 || selectedCampaignIds.length === 0
-            }
-          />
-          <CustomDropdown
-            label={`Campaign`}
-            options={campaignOptions}
-            selectedOptions={selectedCampaignIds}
-            onSelectionChange={setSelectedCampaignIds}
-            disabled={
-              selectedAgencies.length === 0 || selectedAdvertisers.length === 0
-            }
-          />
+        <div className="flex justify-between items-center flex-wrap gap-3">
+          {/* LEFT SIDE FILTERS */}
+          <div className="flex gap-3 flex-wrap">
+            <CustomDropdown
+              label={`Agency`}
+              options={agencyOptions}
+              selectedOptions={selectedAgencies}
+              onSelectionChange={setSelectedAgencies}
+              disabled={
+                selectedAdvertisers.length === 0 ||
+                selectedCampaignIds.length === 0
+              }
+            />
+            <CustomDropdown
+              label={`Advertiser`}
+              options={advertiserOptions}
+              selectedOptions={selectedAdvertisers}
+              onSelectionChange={setSelectedAdvertisers}
+              disabled={
+                selectedAgencies.length === 0 ||
+                selectedCampaignIds.length === 0
+              }
+            />
+            <CustomDropdown
+              label={`Campaign`}
+              options={campaignOptions}
+              selectedOptions={selectedCampaignIds}
+              onSelectionChange={setSelectedCampaignIds}
+              disabled={
+                selectedAgencies.length === 0 ||
+                selectedAdvertisers.length === 0
+              }
+            />
+          </div>
+
+          {/* RIGHT SIDE ACTIONS */}
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleResetFilters}
+              className="px-4 py-2 bg-white border-2 border-purple-300 rounded-xl hover:bg-purple-50 transition-all text-sm font-medium"
+            >
+              Reset
+            </button>
+
+            <button
+              onClick={handleExportCSV}
+              disabled={filteredData.length === 0}
+              className="px-4 py-2.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl shadow-sm hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-all text-sm font-medium"
+            >
+              Export CSV
+            </button>
+          </div>
         </div>
       </div>
 
@@ -486,10 +610,7 @@ export default function TargetingAndAnalyticsTable({
         <table className="w-full">
           <thead className="sticky top-0 z-10">
             {table.getHeaderGroups().map((hg) => (
-              <tr
-                key={hg.id}
-                className="bg-gradient-to-r from-purple-600 to-pink-600"
-              >
+              <tr key={hg.id} className="bg-purple-600">
                 {hg.headers.map((header, index) => (
                   <th
                     key={header.id}
@@ -535,8 +656,7 @@ export default function TargetingAndAnalyticsTable({
                     <td
                       key={cell.id}
                       className={`
-                        px-4 
-                        py-2
+                        px-2 
                         border-b border-purple-100/40
                         ${
                           index < row.getVisibleCells().length - 1
@@ -575,7 +695,6 @@ export default function TargetingAndAnalyticsTable({
                       <div className="text-lg font-medium text-gray-400">
                         No data matches your filters
                       </div>
-                      
                     </div>
                   )}
                 </td>
@@ -724,26 +843,33 @@ export default function TargetingAndAnalyticsTable({
       )}
 
       {/* FORM DIALOG */}
-      <Dialog open={!!editMode} onOpenChange={(open) => {
-        if (!open) {
-          setEditMode(null);
-          setFormData({});
-        }
-      }}>
-        <DialogContent className="max-w-4xl max-h-[80vh]">
-          <DialogHeader>
-            <DialogTitle>
+      <Dialog
+        open={!!editMode}
+        onOpenChange={(open) => {
+          if (!open) {
+            setEditMode(null);
+            setFormData({});
+          }
+        }}
+      >
+        <DialogContent
+          className="max-w-4xl max-h-[85vh] bg-white border border-purple-200 rounded-2xl shadow-2xl"
+          onOpenAutoFocus={(e) => e.preventDefault()}
+        >
+          <DialogHeader className="border-b border-purple-200 pb-3">
+            <DialogTitle className="text-lg font-semibold text-purple-700">
               {editMode === "PACKAGE"
                 ? "Edit Based On Package"
                 : "Edit Based On Package & Placement"}
             </DialogTitle>
           </DialogHeader>
-          <ScrollArea className="h-[60vh] pr-4">
+          <ScrollArea className="h-[60vh] pr-4 bg-purple-50/30 rounded-lg p-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-1">
               {Object.entries(formData).map(([key, value]) => {
-                const readOnly = editMode === "PACKAGE"
-                  ? PACKAGE_READ_ONLY_COLUMNS.has(key)
-                  : PACKAGE_AND_PLACEMENT_READ_ONLY_COLUMNS.has(key);
+                const readOnly =
+                  editMode === "PACKAGE"
+                    ? PACKAGE_READ_ONLY_COLUMNS.has(key)
+                    : PACKAGE_AND_PLACEMENT_READ_ONLY_COLUMNS.has(key);
                 return (
                   <div key={key} className="space-y-2">
                     <label className="text-sm font-medium text-gray-700">
@@ -762,7 +888,9 @@ export default function TargetingAndAnalyticsTable({
                           }));
                         }
                       }}
-                      className={readOnly ? "bg-gray-100" : ""}
+                      className={`
+                        ${readOnly ? "bg-gray-100 text-gray-500" : "focus:ring-2 focus:ring-purple-400"}
+                      `}                      
                     />
                   </div>
                 );
@@ -779,8 +907,12 @@ export default function TargetingAndAnalyticsTable({
             >
               Cancel
             </Button>
-            <Button onClick={handleSubmit}>
-              Save Changes
+            <Button
+              onClick={handleSubmit}
+              disabled={isSaving}
+              className="min-w-[140px]"
+            >
+              {isSaving ? "Submitting..." : "Save Changes"}
             </Button>
           </DialogFooter>
         </DialogContent>
