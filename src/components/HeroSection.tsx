@@ -221,7 +221,7 @@ const HeroSection = () => {
 
         {/* Content */}
         <div className="container mx-auto w-full relative z-10">
-          <div className="flex justify-center mt-16 mb-40">
+        <div className="flex justify-center items-center mt-16 mb-40 text-center">
             <motion.div
               initial={{ opacity: 0, x: 50 }}
               animate={{ opacity: 1, x: 0 }}
@@ -234,12 +234,12 @@ const HeroSection = () => {
               </p>
 
               {/* Centered SSOT Title */}
-              <h1 className="text-6xl md:text-8xl lg:text-9xl font-bold mb-6 text-white leading-none text-center">
+              <h1 className="text-4xl md:text-5xl lg:text-7xl font-bold mb-3 text-white leading-none text-center">
                 SSOT
               </h1>
 
               {/* Centered Subtitle */}
-              <p className="text-white font-semibold text-xl md:text-2xl mb-8 text-center tracking-wide">
+              <p className="text-white font-semibold text-md md:text-xl mb-8 text-center tracking-wide">
                 Select your Agency & Advertiser
               </p>
 
@@ -257,25 +257,25 @@ const HeroSection = () => {
               )}
 
               {/* Dropdowns in a row */}
-              <div className="flex flex-col md:flex-row gap-6 items-end mb-6">
+              <div className="flex flex-col md:flex-row gap-4 justify-center items-center mb-6 w-full">
               {/* <div className="bg-white/5 backdrop-blur-sm p-6 rounded-2xl border border-white/10"> */}
                 {/* Agency Dropdown */}
-                <div className="relative flex-1" ref={agencyDropdownRef}>
+                <div className="relative" ref={agencyDropdownRef}>
                   <div className="mb-2">
-                    <label className="text-white font-medium text-sm">
+                  <label className="text-white ml-2 font-medium text-sm block text-center md:text-left">
                       Agency
                     </label>
                   </div>
                   <button
                     onClick={() => setIsAgencyOpen(!isAgencyOpen)}
                     disabled={loading}
-                    className="w-full flex items-center justify-between px-5 py-3 rounded-xl bg-gray-900/90 backdrop-blur-sm border border-purple-400/40 text-white hover:bg-gray-800/90 hover:border-purple-400/60 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-80 flex items-center justify-between px-4 py-2 rounded-xl bg-gray-900/90 backdrop-blur-sm border border-purple-400/40 text-white hover:bg-gray-800/90 hover:border-purple-400/60 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <span
                       className={
                         selectedAgency
-                          ? "font-medium text-sm md:text-base"
-                          : "text-purple-200/80 text-sm md:text-base"
+                          ? "font-medium text-sm md:text-xs"
+                          : "text-purple-200/80 text-sm md:text-sm"
                       }
                     >
                       {loading
@@ -311,7 +311,7 @@ const HeroSection = () => {
                           </div>
                           <button
                             onClick={() => handleAgencySelect("")}
-                            className="w-full flex items-center gap-3 px-4 py-3.5 text-white hover:bg-purple-500/20 transition border-b border-purple-500/20"
+                            className="w-full flex items-center gap-3 px-4 py-2 text-white hover:bg-purple-500/20 transition border-b border-purple-500/20"
                           >
                             <span className="flex-1 text-left text-sm">
                               All Agencies
@@ -325,7 +325,7 @@ const HeroSection = () => {
                             <button
                               key={agency}
                               onClick={() => handleAgencySelect(agency)}
-                              className="w-full flex items-center gap-3 px-4 py-3.5 text-white hover:bg-purple-500/20 transition border-b border-purple-500/20 last:border-none"
+                              className="w-full flex items-center gap-3 px-4 py-2 text-white hover:bg-purple-500/20 transition border-b border-purple-500/20 last:border-none"
                             >
                               <span className="flex-1 text-left text-sm">
                                 {agency}
@@ -348,22 +348,22 @@ const HeroSection = () => {
                 </div>
 
                 {/* Advertiser Dropdown */}
-                <div className="relative flex-1" ref={advertiserDropdownRef}>
+                <div className="relative" ref={advertiserDropdownRef}>
                   <div className="mb-2">
-                    <label className="text-white font-medium text-sm">
+                  <label className="text-white ml-2 font-medium text-sm block text-center md:text-left">
                       Advertiser
                     </label>
                   </div>
                   <button
                     onClick={() => setIsAdvertiserOpen(!isAdvertiserOpen)}
                     disabled={loading || advertisers.length === 0}
-                    className="w-full flex items-center justify-between px-5 py-3 rounded-xl bg-gray-900/90 backdrop-blur-sm border border-purple-400/40 text-white hover:bg-gray-800/90 hover:border-purple-400/60 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-80 flex items-center justify-between px-4 py-2 rounded-xl bg-gray-900/90 backdrop-blur-sm border border-purple-400/40 text-white hover:bg-gray-800/90 hover:border-purple-400/60 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <span
                       className={
                         selectedAgency
-                          ? "font-medium text-sm md:text-base"
-                          : "text-purple-200/80 text-sm md:text-base"
+                          ? "font-medium text-sm md:text-xs"
+                          : "text-purple-200/80 text-sm md:text-sm"
                       }
                     >
                       {loading
@@ -403,7 +403,7 @@ const HeroSection = () => {
                           </div>
                           <button
                             onClick={() => handleAdvertiserSelect("")}
-                            className="w-full flex items-center gap-3 px-4 py-3.5 text-white hover:bg-purple-500/20 transition border-b border-purple-500/20"
+                            className="w-full flex items-center gap-3 px-4 py-2 text-white hover:bg-purple-500/20 transition border-b border-purple-500/20"
                           >
                             <span className="flex-1 text-left text-sm">
                               All Advertisers
@@ -417,7 +417,7 @@ const HeroSection = () => {
                             <button
                               key={advertiser}
                               onClick={() => handleAdvertiserSelect(advertiser)}
-                              className="w-full flex items-center gap-3 px-4 py-3.5 text-white hover:bg-purple-500/20 transition border-b border-purple-500/20 last:border-none"
+                              className="w-full flex items-center gap-3 px-4 py-2 text-white hover:bg-purple-500/20 transition border-b border-purple-500/20 last:border-none"
                             >
                               <span className="flex-1 text-left text-sm">
                                 {advertiser}
@@ -441,7 +441,7 @@ const HeroSection = () => {
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   disabled={!isGoButtonEnabled}
-                  className="w-full px-8 py-3.5 rounded-xl bg-gradient-to-r from-purple-800 to-pink-600 text-white font-semibold text-base flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed hover:opacity-90 transition-all"
+                  className="w-full px-8 py-3 rounded-xl bg-gradient-to-r from-purple-800 to-pink-600 text-white font-semibold text-base flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed hover:opacity-90 transition-all"
                 >
                   {loading ? "Loading..." : "Go"}
                   <ArrowRight className="w-4 h-4" />
