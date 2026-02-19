@@ -15,21 +15,35 @@ const HeroSection = () => {
   const [selectedAgency, setSelectedAgency] = useState("");
   // Don't select any advertiser by default
   const [selectedAdvertiser, setSelectedAdvertiser] = useState("");
+  // Add Channel state
+  const [selectedChannel, setSelectedChannel] = useState("");
+  
   const [isAgencyOpen, setIsAgencyOpen] = useState(false);
   const [isAdvertiserOpen, setIsAdvertiserOpen] = useState(false);
+  // Add Channel dropdown state
+  const [isChannelOpen, setIsChannelOpen] = useState(false);
+  
   const agencyDropdownRef = useRef<HTMLDivElement>(null);
   const advertiserDropdownRef = useRef<HTMLDivElement>(null);
+  // Add Channel dropdown ref
+  const channelDropdownRef = useRef<HTMLDivElement>(null);
 
   // State for fetched data
   const [agencies, setAgencies] = useState<string[]>([]);
   const [advertisers, setAdvertisers] = useState<string[]>([]);
   const [allAdvertisers, setAllAdvertisers] = useState<string[]>([]);
+  // Add Channel state
+  const [channels, setChannels] = useState<string[]>([]);
+  const [allChannels, setAllChannels] = useState<string[]>([]);
+  
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fetchedData, setFetchedData] = useState<CsvRow[]>([]);
 
   const [agencySearch, setAgencySearch] = useState("");
   const [advertiserSearch, setAdvertiserSearch] = useState("");
+  // Add Channel search state
+  const [channelSearch, setChannelSearch] = useState("");
 
   const filteredAgencies = agencies.filter((agency) =>
     agency.toLowerCase().includes(agencySearch.toLowerCase())
@@ -37,6 +51,11 @@ const HeroSection = () => {
 
   const filteredAdvertisers = advertisers.filter((advertiser) =>
     advertiser.toLowerCase().includes(advertiserSearch.toLowerCase())
+  );
+
+  // Add filtered channels
+  const filteredChannels = channels.filter((channel) =>
+    channel.toLowerCase().includes(channelSearch.toLowerCase())
   );
 
   // Add this ref to track if data was already fetched
@@ -79,6 +98,41 @@ const HeroSection = () => {
     }
   }, [selectedAgency, fetchedData, allAdvertisers]);
 
+  // Filter channels based on selected agency and advertiser
+  useEffect(() => {
+    if (fetchedData.length > 0) {
+      let filteredData = fetchedData;
+      
+      // Filter by agency if selected
+      if (selectedAgency) {
+        filteredData = filteredData.filter(
+          (row) => row.AGENCY_NAME === selectedAgency
+        );
+      }
+      
+      // Filter by advertiser if selected
+      if (selectedAdvertiser) {
+        filteredData = filteredData.filter(
+          (row) => row.ADVERTISER_NAME === selectedAdvertiser
+        );
+      }
+      
+      // Extract unique channels from filtered data
+      const filteredChannels = Array.from(
+        new Set(
+          filteredData.map((d) => d.CHANNEL || "").filter(Boolean)
+        )
+      ).sort();
+      
+      setChannels(filteredChannels);
+      
+      // Reset selected channel if it's not in the new list
+      if (selectedChannel && !filteredChannels.includes(selectedChannel)) {
+        setSelectedChannel("");
+      }
+    }
+  }, [selectedAgency, selectedAdvertiser, fetchedData]);
+
   // Click outside handlers
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -93,6 +147,12 @@ const HeroSection = () => {
         !advertiserDropdownRef.current.contains(event.target as Node)
       ) {
         setIsAdvertiserOpen(false);
+      }
+      if (
+        channelDropdownRef.current &&
+        !channelDropdownRef.current.contains(event.target as Node)
+      ) {
+        setIsChannelOpen(false);
       }
     };
 
@@ -115,7 +175,7 @@ const HeroSection = () => {
       setFetchedData(data);
       setRadiaPlanData(data);
 
-      // Extract unique agencies and advertisers
+      // Extract unique agencies, advertisers, and channels
       extractAndSetData(data);
       setError(null);
     } catch (err) {
@@ -143,36 +203,43 @@ const HeroSection = () => {
       new Set(data.map((d) => d.ADVERTISER_NAME || "").filter(Boolean))
     ).sort();
 
+    // Extract unique channels
+    const uniqueChannels = Array.from(
+      new Set(data.map((d) => d.CHANNEL || "").filter(Boolean))
+    ).sort();
+
     setAgencies(uniqueAgencies);
     setAllAdvertisers(uniqueAdvertisers);
     setAdvertisers(uniqueAdvertisers);
+    setAllChannels(uniqueChannels);
+    setChannels(uniqueChannels);
   };
 
-  // Handle Go button click
-  const handleGo = () => {
-    if (loading) return;
+  // HeroSection.tsx - Update the handleGo function
+const handleGo = () => {
+  if (loading) return;
 
-    // Create navigation state
-    const navState: any = {};
+  const navState: any = {};
 
-    // If agency is selected but advertiser is not, pass "__AGENCY_ONLY__" as advertiser
-    if (selectedAgency && !selectedAdvertiser) {
-      navState.selectedAdvertiser = "__AGENCY_ONLY__";
-      navState.agencyFilter = selectedAgency; // Pass the agency name separately
-    }
-    // If advertiser is selected
-    else if (selectedAdvertiser) {
-      navState.selectedAdvertiser = selectedAdvertiser;
-    }
-    // If nothing is selected (both are "All")
-    else {
-      navState.selectedAdvertiser = ""; // Empty means show all
-    }
+  // Always pass agency if selected
+  if (selectedAgency) {
+    navState.selectedAgency = selectedAgency;
+  }
 
-    navigate("/table", {
-      state: navState,
-    });
-  };
+  // Always pass advertiser if selected
+  if (selectedAdvertiser) {
+    navState.selectedAdvertiser = selectedAdvertiser;
+  }
+  
+  // Always pass channel if selected
+  if (selectedChannel) {
+    navState.selectedChannel = selectedChannel;
+  }
+
+  navigate("/table", {
+    state: navState,
+  });
+};
 
   const handleAgencySelect = (agency: string) => {
     setSelectedAgency(agency);
@@ -186,6 +253,13 @@ const HeroSection = () => {
     setIsAdvertiserOpen(false);
   };
 
+  // Add channel select handler
+  const handleChannelSelect = (channel: string) => {
+    setSelectedChannel(channel);
+    setChannelSearch(""); // reset search
+    setIsChannelOpen(false);
+  };
+
   const handleRetry = () => {
     setError(null);
     fetchData();
@@ -196,15 +270,14 @@ const HeroSection = () => {
 
   // Helper function for display text
   const getDisplayText = () => {
-    if (!selectedAdvertiser && !selectedAgency) {
+    const parts = [];
+    if (!selectedAgency && !selectedAdvertiser && !selectedChannel) {
       return "Will show all data in table";
-    } else if (!selectedAdvertiser && selectedAgency) {
-      return `Will show all advertisers for ${selectedAgency}`;
-    } else if (selectedAdvertiser && !selectedAgency) {
-      return `Will show ${selectedAdvertiser} data across all agencies`;
-    } else {
-      return `Will show ${selectedAdvertiser} data for ${selectedAgency}`;
     }
+    if (selectedAgency) parts.push(`Agency: ${selectedAgency}`);
+    if (selectedAdvertiser) parts.push(`Advertiser: ${selectedAdvertiser}`);
+    if (selectedChannel) parts.push(`Channel: ${selectedChannel}`);
+    return `Will show data for ${parts.join(", ")}`;
   };
 
   return (
@@ -258,7 +331,6 @@ const HeroSection = () => {
 
               {/* Dropdowns in a row */}
               <div className="flex flex-col md:flex-row gap-4 justify-center items-center mb-6 w-full">
-              {/* <div className="bg-white/5 backdrop-blur-sm p-6 rounded-2xl border border-white/10"> */}
                 {/* Agency Dropdown */}
                 <div className="relative" ref={agencyDropdownRef}>
                   <div className="mb-2">
@@ -361,7 +433,7 @@ const HeroSection = () => {
                   >
                     <span
                       className={
-                        selectedAgency
+                        selectedAdvertiser
                           ? "font-medium text-sm md:text-xs"
                           : "text-purple-200/80 text-sm md:text-sm"
                       }
@@ -432,7 +504,98 @@ const HeroSection = () => {
                     )}
                   </AnimatePresence>
                 </div>
+
+                {/* Channel Dropdown */}
+                <div className="relative" ref={channelDropdownRef}>
+                  <div className="mb-2">
+                  <label className="text-white ml-2 font-medium text-sm block text-center md:text-left">
+                      Channel
+                    </label>
+                  </div>
+                  <button
+                    onClick={() => setIsChannelOpen(!isChannelOpen)}
+                    disabled={loading || channels.length === 0}
+                    className="w-80 flex items-center justify-between px-4 py-2 rounded-xl bg-gray-900/90 backdrop-blur-sm border border-purple-400/40 text-white hover:bg-gray-800/90 hover:border-purple-400/60 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <span
+                      className={
+                        selectedChannel
+                          ? "font-medium text-sm md:text-xs"
+                          : "text-purple-200/80 text-sm md:text-sm"
+                      }
+                    >
+                      {loading
+                        ? "Loading..."
+                        : channels.length === 0
+                        ? "No channels"
+                        : selectedChannel || "All Channels"}
+                    </span>
+                    <ChevronDown
+                      className={`w-5 h-5 text-purple-300 transition-transform ${
+                        isChannelOpen ? "rotate-180" : ""
+                      }`}
+                    />
+                  </button>
+
+                  <AnimatePresence>
+                    {isChannelOpen && !loading && channels.length > 0 && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -8, scale: 0.98 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: -8, scale: 0.98 }}
+                        transition={{ duration: 0.2 }}
+                        className="absolute top-full translate-y-[-6px] w-full rounded-xl bg-gray-900 border border-purple-500/40 shadow-2xl z-[999] overflow-hidden"
+                      >
+                        <div className="max-h-[35vh] overflow-y-auto">
+                          {/* Search input */}
+                          <div className="p-3 border-b border-purple-500/20">
+                            <input
+                              type="text"
+                              placeholder="Search channel..."
+                              value={channelSearch}
+                              onChange={(e) =>
+                                setChannelSearch(e.target.value)
+                              }
+                              className="w-full px-3 py-2 rounded-lg bg-gray-800 text-white text-sm outline-none border border-purple-500/30 focus:border-purple-400"
+                            />
+                          </div>
+                          
+                          {/* All Channels option */}
+                          <button
+                            onClick={() => handleChannelSelect("")}
+                            className="w-full flex items-center gap-3 px-4 py-2 text-white hover:bg-purple-500/20 transition border-b border-purple-500/20"
+                          >
+                            <span className="flex-1 text-left text-sm">
+                              All Channels
+                            </span>
+                            {!selectedChannel && (
+                              <Check className="w-4 h-4 text-purple-300" />
+                            )}
+                          </button>
+
+                          {/* Channel options */}
+                          {filteredChannels.map((channel) => (
+                            <button
+                              key={channel}
+                              onClick={() => handleChannelSelect(channel)}
+                              className="w-full flex items-center gap-3 px-4 py-2 text-white hover:bg-purple-500/20 transition border-b border-purple-500/20 last:border-none"
+                            >
+                              <span className="flex-1 text-left text-sm">
+                                {channel}
+                              </span>
+                              {selectedChannel === channel && (
+                                <Check className="w-4 h-4 text-purple-300" />
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
               </div>
+
+              
 
               {/* Go Button below dropdowns */}
               <div className="pt-2">

@@ -1,4 +1,4 @@
-// TablePage.tsx - FIXED FOR PAGE REFRESH (Simplified Version)
+// TablePage.tsx - UPDATED WITH CHANNEL SUPPORT
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -33,15 +33,17 @@ const TablePage = () => {
   const location = useLocation();
   const { radiaPlanData: contextData } = useData();
   
-  // Get selected advertiser and agency from navigation state
+  // Get selected advertiser, agency, and channel from navigation state
   const initialAdvertiser = location.state?.selectedAdvertiser || "";
-  const initialAgency = location.state?.agencyFilter || "";
+  const initialAgency = location.state?.selectedAgency || "";
+  const initialChannel = location.state?.selectedChannel || ""; // Add channel
   
   const [activeTab, setActiveTab] = useState(
     location.state?.activeTab || "radia-plan"
   );
   const [selectedAdvertiser, setSelectedAdvertiser] = useState(initialAdvertiser);
   const [selectedAgency, setSelectedAgency] = useState(initialAgency);
+  const [selectedChannel, setSelectedChannel] = useState(initialChannel); // Add channel state
 
   // State for each tab's data
   const [radiaPlanData, setRadiaPlanData] = useState<CsvRow[]>([]);
@@ -60,49 +62,15 @@ const TablePage = () => {
   const [campaignOverviewError, setCampaignOverviewError] = useState<string | null>(null);
   const [targetingAnalyticsError, setTargetingAnalyticsError] = useState<string | null>(null);
 
-  // Load Radia Plan data on mount
-  // useEffect(() => {
-  //   const loadInitialData = async () => {
-  //     // Always try to use context data first if available
-  //     if (contextData && contextData.length > 0) {
-  //       console.log("Using cached Radia Plan data from context");
-  //       setRadiaPlanData(contextData);
-  //       setRadiaPlanLoading(false);
-  //     } else {
-  //       // If no context data, fetch from API
-  //       try {
-  //         setRadiaPlanLoading(true);
-  //         console.log("Fetching Radia Plan data from API...");
-  //         const data = await fetchRadiaPlanApi();
-  //         setRadiaPlanData(data);
-  //         // Also update context for future use
-  //         if (setRadiaPlanData) {
-  //           setRadiaPlanData(data);
-  //         }
-  //         setRadiaPlanError(null);
-  //       } catch (err) {
-  //         const errorMessage = err instanceof Error ? err.message : "Unknown error";
-  //         setRadiaPlanError(
-  //           `Failed to load Radia Plan data: ${errorMessage}. Please try again later.`
-  //         );
-  //         console.error("Error fetching Radia Plan data:", err);
-  //       } finally {
-  //         setRadiaPlanLoading(false);
-  //       }
-  //     }
-  //   };
-
-  //   loadInitialData();
-  // }, []); // Run once on mount
-
-  // Update selected filters when location state changes
   useEffect(() => {
     if (location.state) {
-      const newAdvertiser = location.state.selectedAdvertiser || "";
-      const newAgency = location.state.agencyFilter || "";
+      const newAgency = location.state?.selectedAgency || "";
+      const newAdvertiser = location.state?.selectedAdvertiser || "";
+      const newChannel = location.state?.selectedChannel || ""; // Add channel
       
-      setSelectedAdvertiser(newAdvertiser);
       setSelectedAgency(newAgency);
+      setSelectedAdvertiser(newAdvertiser);
+      setSelectedChannel(newChannel); // Set channel
     }
   }, [location.state]);
 
@@ -128,9 +96,7 @@ const TablePage = () => {
       const data = await fetchRadiaPlanApi();
       setRadiaPlanData(data);
       // Update context
-      if (setRadiaPlanData) {
-        setRadiaPlanData(data);
-      }
+      // Note: You need to get setRadiaPlanData from context
       setRadiaPlanError(null);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Unknown error";
@@ -263,38 +229,42 @@ const TablePage = () => {
     setActiveTab(page);
   };
 
-  // Handle refresh data for current tab
-  const handleRefreshData = () => {
-    switch (activeTab) {
-      case "radia-plan":
-        loadRadiaPlanData();
-        break;
-      case "media-plan":
-        loadMediaPlanData();
-        break;
-      case "campaign-overview":
-        loadCampaignOverviewData();
-        break;
-      case "targeting-analytics":
-        loadTargetingAnalyticsData();
-        break;
-      default:
-        break;
-    }
-  };
+  // // Handle refresh data for current tab
+  // const handleRefreshData = () => {
+  //   switch (activeTab) {
+  //     case "radia-plan":
+  //       loadRadiaPlanData();
+  //       break;
+  //     case "media-plan":
+  //       loadMediaPlanData();
+  //       break;
+  //     case "campaign-overview":
+  //       loadCampaignOverviewData();
+  //       break;
+  //     case "targeting-analytics":
+  //       loadTargetingAnalyticsData();
+  //       break;
+  //     default:
+  //       break;
+  //   }
+  // };
 
   // Helper function to get the current filter status display
   const getFilterStatus = () => {
-    if (selectedAdvertiser === "__AGENCY_ONLY__" && selectedAgency) {
-      return `Showing all advertisers for ${selectedAgency}`;
-    } else if (selectedAdvertiser && selectedAdvertiser !== "__AGENCY_ONLY__" && selectedAgency) {
-      return `Showing ${selectedAdvertiser} for ${selectedAgency}`;
-    } else if (selectedAdvertiser && selectedAdvertiser !== "__AGENCY_ONLY__" && !selectedAgency) {
-      return `Showing ${selectedAdvertiser} across all agencies`;
-    } else if (!selectedAdvertiser && selectedAgency) {
+    const parts = [];
+    
+    if (selectedAgency) parts.push(`Agency: ${selectedAgency}`);
+    if (selectedAdvertiser && selectedAdvertiser !== "__AGENCY_ONLY__") {
+      parts.push(`Advertiser: ${selectedAdvertiser}`);
+    }
+    if (selectedChannel) parts.push(`Channel: ${selectedChannel}`);
+    
+    if (parts.length === 0) {
+      return "Showing all data";
+    } else if (selectedAdvertiser === "__AGENCY_ONLY__" && selectedAgency) {
       return `Showing all advertisers for ${selectedAgency}`;
     } else {
-      return "Showing all data";
+      return `Showing data for ${parts.join(", ")}`;
     }
   };
 
@@ -304,8 +274,6 @@ const TablePage = () => {
       case "radia-plan":
         return (
           <div className="bg-white rounded-xl shadow-lg p-4">
-            {/* Filter Status Banner */}
-            
             
             {radiaPlanLoading ? (
               <div className="flex flex-col justify-center items-center h-64">
@@ -342,6 +310,7 @@ const TablePage = () => {
                 data={radiaPlanData} 
                 selectedAdvertiser={selectedAdvertiser}
                 selectedAgency={selectedAgency}
+                selectedChannel={selectedChannel} // Pass the channel prop
               />
             )}
           </div>

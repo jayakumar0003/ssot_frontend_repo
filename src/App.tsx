@@ -19,8 +19,8 @@ const App = () => (
       <DataProvider>
         <Routes>
           <Route path="/" element={<Index />} />
-          <Route path="/table" element={<TablePage />} /> {/* Add this route */}
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+          <Route path="/table" element={<TablePage />} /> 
+          
           <Route path="*" element={<NotFound />} />
         </Routes>
       </DataProvider>
