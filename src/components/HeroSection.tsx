@@ -313,7 +313,7 @@ const handleGo = () => {
 
               {/* Centered Subtitle */}
               <p className="text-white font-semibold text-md md:text-xl mb-8 text-center tracking-wide">
-                Select your Agency & Advertiser
+                Select your Agency, Advertiser & Channel
               </p>
 
               {/* Error message */}
