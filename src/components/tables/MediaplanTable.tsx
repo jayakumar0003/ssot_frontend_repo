@@ -565,7 +565,7 @@ export default function MediaplanTable({ data, onSubmitMediaPlan }: Props) {
         <table className="w-full text-xs">
           <thead className="sticky top-0 z-10">
             {table.getHeaderGroups().map((hg) => (
-              <tr key={hg.id} className="bg-purple-600">
+              <tr key={hg.id} className="bg-[#000050]">
                 {hg.headers.map((header, index) => (
                   <th
                     key={header.id}
@@ -579,7 +579,7 @@ export default function MediaplanTable({ data, onSubmitMediaPlan }: Props) {
                       sticky top-0
                       ${
                         index < hg.headers.length - 1
-                          ? "border-r border-purple-500/40"
+                          ? "border-r border-[#000050]/40"
                           : ""
                       }
                     `}
@@ -614,7 +614,7 @@ export default function MediaplanTable({ data, onSubmitMediaPlan }: Props) {
                         border-b border-purple-100/40
                         ${
                           index < row.getVisibleCells().length - 1
-                            ? "border-r border-purple-100/40"
+                            ? "border-r border-[#000050]/30"
                             : ""
                         }
                       `}
