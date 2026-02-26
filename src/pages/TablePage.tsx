@@ -444,11 +444,10 @@ async function updateAudienceInfo(rowData: CsvRow, selectedAudiences: string[]) 
                     <span
                       key={charIndex}
                       className={`
-                        bg-gradient-to-t from-purple-600 to-pink-600
-                        bg-clip-text text-transparent
+                        text-[#000050]
                         transition-all duration-200
                         ${charIndex === 0 ? "text-4xl" : "text-3xl"}
-                        ${charIndex % 2 === 0 ? "opacity-100" : "opacity-80"}
+                        ${charIndex % 2 === 0 ? "" : ""}
                       `}
                     >
                       {char}

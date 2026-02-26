@@ -864,7 +864,7 @@ export default function TargetingAndAnalyticsTable({
   };
 
   return (
-    <div className="rounded-lg overflow-hidden border border-purple-200/40 max-w-[1200px] mx-auto text-sm">
+    <div className="rounded-lg overflow-hidden border border-purple-200/40 max-w-full mx-auto text-sm">
       {/* FILTER BAR */}
       <div className="px-3 py-2 border-b border-purple-200/40 bg-gradient-to-r from-purple-50 to-pink-50/30">
         <div className="flex justify-between items-center flex-wrap gap-3">
