@@ -15,6 +15,7 @@ import { fetchRadiaPlanApi } from "@/api/radiaplan.api";
 import { fetchCampaignApi } from "@/api/campaign.api";
 import {
   fetchTargetingApi,
+  updateAudienceInfoApi,
   updateByPackageAndPlacementApi,
   updateByPackageApi,
 } from "@/api/targeting.api";
@@ -192,6 +193,22 @@ const TablePage = () => {
       throw err;
     }
   }
+
+// In TablePage.tsx where you implement updateAudienceInfo
+async function updateAudienceInfo(rowData: CsvRow, selectedAudiences: string[]) {
+  try {
+    await updateAudienceInfoApi(
+      rowData.RADIA_OR_PRISMA_PACKAGE_NAME,
+      rowData.PLACEMENTNAME,
+      selectedAudiences
+    );
+    await loadTargetingAnalyticsData();
+    // Add toast notification here if you have one // or use a toast
+  } catch (err) {
+    alert("Failed to update audience info");
+    throw err;
+  }
+}
 
   // Load other data when tab changes
   useEffect(() => {
@@ -398,6 +415,7 @@ const TablePage = () => {
                 data={targetingAnalyticsData}
                 onUpdateByPackage={updateByPackage}
                 onUpdateByPackageAndPlacement={updateByPackageAndPlacement}
+                onUpdateAudienceInfo={updateAudienceInfo}
               />
             )}
           </div>

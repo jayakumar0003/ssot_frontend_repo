@@ -136,13 +136,11 @@ function CustomDropdown({
         onClick={() => !disabled && setIsOpen(!isOpen)}
         disabled={disabled}
         className={`
-          px-3 py-2
-          border-2 border-purple-300 
-          rounded-xl 
-          flex items-center gap-2
-          min-w-[100px]
-          justify-between 
-          text-sm
+          px-3 py-1.5 text-xs rounded-lg
+border-2 border-purple-300
+flex items-center gap-2
+min-w-[90px]
+justify-between
           ${
             disabled
               ? "opacity-50 cursor-not-allowed bg-gray-100"
@@ -169,7 +167,7 @@ function CustomDropdown({
       </button>
 
       {isOpen && !disabled && (
-        <div className="absolute z-50 mt-2 w-72 bg-white border border-purple-200 rounded-xl shadow-xl max-h-64 overflow-y-auto">
+        <div className="absolute z-50 mt-2 w-72 bg-white border border-purple-200 rounded-xl shadow-xl max-h-52 overflow-y-auto">
           <div className="p-3 border-b border-purple-100">
             <input
               type="text"
@@ -425,14 +423,18 @@ export default function MediaplanTable({ data, onSubmitMediaPlan }: Props) {
     return Array.from(allKeys).map((key) => ({
       accessorKey: key,
       header: key.replace(/_/g, " "),
+
+      // 👇 Increase FLIGHT column width
+      size: key === "FLIGHT" ? 150 : undefined,
+
       cell: ({ getValue, row }) => {
         const value = getValue();
 
-        // Make PLACEMENT clickable to open form
+        // PLACEMENT clickable
         if (key === "PLACEMENT" || key === "PLACMENT") {
           return (
             <div
-              className="break-words whitespace-normal text-sm py-3 cursor-pointer"
+              className="truncate text-xs py-1 leading-tight whitespace-normal cursor-pointer"
               onClick={() => {
                 setFormData(row.original);
                 setOpenDialog(true);
@@ -443,8 +445,17 @@ export default function MediaplanTable({ data, onSubmitMediaPlan }: Props) {
           );
         }
 
+        // 👇 Special styling for FLIGHT column
+        if (key === "FLIGHT") {
+          return (
+            <div className="whitespace-normal text-xs py-1 min-w-[150px]">
+              {value ? String(value) : "—"}
+            </div>
+          );
+        }
+
         return (
-          <div className="break-words whitespace-normal text-sm py-3">
+          <div className="truncate text-xs py-1 leading-tight whitespace-normal">
             {value ? String(value) : "—"}
           </div>
         );
@@ -491,9 +502,9 @@ export default function MediaplanTable({ data, onSubmitMediaPlan }: Props) {
   };
 
   return (
-    <div className="rounded-xl overflow-hidden border border-purple-200/40">
+    <div className="rounded-lg overflow-hidden border border-purple-200/40 max-w-[1200px] mx-auto text-sm">
       {/* FILTER BAR */}
-      <div className="p-4 border-b border-purple-200/40 bg-gradient-to-r from-purple-50 to-pink-50/30">
+      <div className="px-3 py-2 border-b border-purple-200/40 bg-gradient-to-r from-purple-50 to-pink-50/30">
         <div className="flex justify-between items-center flex-wrap gap-3">
           {/* LEFT SIDE FILTERS */}
           <div className="flex gap-3 flex-wrap">
@@ -533,7 +544,7 @@ export default function MediaplanTable({ data, onSubmitMediaPlan }: Props) {
           <div className="flex items-center gap-3">
             <button
               onClick={handleResetFilters}
-              className="px-4 py-2 bg-white border-2 border-purple-300 rounded-xl hover:bg-purple-50 transition-all text-sm font-medium"
+              className="px-3 py-1.5 text-xs bg-white border-2 border-purple-300 rounded-xl hover:bg-purple-50 transition-all font-medium"
             >
               Reset
             </button>
@@ -541,7 +552,7 @@ export default function MediaplanTable({ data, onSubmitMediaPlan }: Props) {
             <button
               onClick={handleExportCSV}
               disabled={filteredData.length === 0}
-              className="px-4 py-2.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl shadow-sm hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-all text-sm font-medium"
+              className="px-3 py-1.5 text-xs bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl shadow-sm hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-all font-medium"
             >
               Export CSV
             </button>
@@ -550,8 +561,8 @@ export default function MediaplanTable({ data, onSubmitMediaPlan }: Props) {
       </div>
 
       {/* TABLE */}
-      <div className="overflow-auto max-h-[calc(150vh-300px)]">
-        <table className="w-full">
+      <div className="overflow-auto max-h-[155vh]">
+        <table className="w-full text-xs">
           <thead className="sticky top-0 z-10">
             {table.getHeaderGroups().map((hg) => (
               <tr key={hg.id} className="bg-purple-600">
@@ -563,8 +574,7 @@ export default function MediaplanTable({ data, onSubmitMediaPlan }: Props) {
                       font-semibold 
                       uppercase 
                       text-left 
-                      px-4 py-3
-                      text-xs
+                      px-3 py-2 text-[11px]
                       tracking-wider
                       sticky top-0
                       ${
@@ -600,8 +610,7 @@ export default function MediaplanTable({ data, onSubmitMediaPlan }: Props) {
                     <td
                       key={cell.id}
                       className={`
-                        px-4 
-                        py-2
+                        px-2 py-1 text-xs
                         border-b border-purple-100/40
                         ${
                           index < row.getVisibleCells().length - 1
@@ -820,8 +829,12 @@ export default function MediaplanTable({ data, onSubmitMediaPlan }: Props) {
                         }
                       }}
                       className={`
-                        ${readOnly ? "bg-gray-100 text-gray-500" : "focus:ring-2 focus:ring-purple-400"}
-                      `}                      
+                        ${
+                          readOnly
+                            ? "bg-gray-100 text-gray-500"
+                            : "focus:ring-2 focus:ring-purple-400"
+                        }
+                      `}
                     />
                   </div>
                 );

@@ -110,13 +110,11 @@ function CustomDropdown({
         onClick={() => !disabled && setIsOpen(!isOpen)}
         disabled={disabled}
         className={`
-          px-4 py-2.5
+          px-3 py-1.5 text-xs rounded-lg
           border-2 border-purple-300 
-          rounded-xl 
           flex items-center gap-2
           min-w-[100px]
           justify-between 
-          text-sm
           ${
             disabled
               ? "opacity-50 cursor-not-allowed bg-gray-100"
@@ -143,7 +141,7 @@ function CustomDropdown({
       </button>
 
       {isOpen && !disabled && (
-        <div className="absolute z-50 mt-2 w-72 bg-white border border-purple-200 rounded-xl shadow-xl max-h-64 overflow-y-auto">
+        <div className="absolute z-50 mt-2 w-72 bg-white border border-purple-200 rounded-xl shadow-xl max-h-52 overflow-y-auto">
           <div className="p-3 border-b border-purple-100">
             <input
               type="text"
@@ -156,7 +154,7 @@ function CustomDropdown({
 
           <div
             onClick={handleSelectAll}
-            className="flex items-center px-4 py-2.5 hover:bg-purple-50 cursor-pointer border-b border-purple-100 font-semibold"
+            className="flex items-center px-3 py-1.5 text-xs hover:bg-purple-50 cursor-pointer border-b border-purple-100 font-semibold"
           >
             <span className="w-5 mr-2 flex items-center justify-center">
               {isAllSelected && <Check className="h-4 w-4 text-purple-600" />}
@@ -371,10 +369,19 @@ export default function CampaignOverviewTable({ data }: Props) {
     return Array.from(allKeys).map((key) => ({
       accessorKey: key,
       header: key.replace(/_/g, " "),
+      size: key === "FLIGHT" ? 300 : undefined,
+    
       cell: ({ getValue }) => {
         const value = getValue();
+    
         return (
-          <div className="break-words whitespace-normal text-sm py-3">
+          <div
+            className={
+              key === "FLIGHT"
+                ? "whitespace-normal text-xs py-2 min-w-[150px]"
+                : "truncate whitespace-normal text-xs py-2 leading-tight"
+            }
+          >
             {value ? String(value) : "—"}
           </div>
         );
@@ -431,9 +438,9 @@ export default function CampaignOverviewTable({ data }: Props) {
   }, [data, selectedAgencies, selectedAdvertisers, selectedCampaignIds]);
 
   return (
-    <div className="rounded-xl overflow-hidden border border-purple-200/40">
+    <div className="rounded-lg overflow-hidden border border-purple-200/40 max-w-[1200px] mx-auto text-sm">
       {/* FILTER BAR */}
-      <div className="p-4 border-b border-purple-200/40 bg-gradient-to-r from-purple-50 to-pink-50/30">
+      <div className="px-3 py-2 border-b border-purple-200/40 bg-gradient-to-r from-purple-50 to-pink-50/30">
         <div className="flex justify-between items-center flex-wrap gap-3">
           {/* LEFT SIDE FILTERS */}
           <div className="flex gap-3 flex-wrap">
@@ -473,7 +480,7 @@ export default function CampaignOverviewTable({ data }: Props) {
           <div className="flex items-center gap-3">
             <button
               onClick={handleResetFilters}
-              className="px-4 py-2 bg-white border-2 border-purple-300 rounded-xl hover:bg-purple-50 transition-all text-sm font-medium"
+              className="px-3 py-1.5 text-xs bg-white border-2 border-purple-300 rounded-xl hover:bg-purple-50 transition-all font-medium"
             >
               Reset
             </button>
@@ -481,7 +488,7 @@ export default function CampaignOverviewTable({ data }: Props) {
             <button
               onClick={handleExportCSV}
               disabled={filteredData.length === 0}
-              className="px-4 py-2.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl shadow-sm hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-all text-sm font-medium"
+              className="px-3 py-1.5 text-xs bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl shadow-sm hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-all font-medium"
             >
               Export CSV
             </button>
@@ -490,8 +497,8 @@ export default function CampaignOverviewTable({ data }: Props) {
       </div>
 
       {/* TABLE */}
-      <div className="overflow-auto max-h-[calc(150vh-300px)]">
-        <table className="w-full">
+      <div className="overflow-auto max-h-[155vh]">
+      <table className="w-full text-xs">
           <thead className="sticky top-0 z-10">
             {table.getHeaderGroups().map((hg) => (
               <tr key={hg.id} className="bg-purple-600">
@@ -499,12 +506,11 @@ export default function CampaignOverviewTable({ data }: Props) {
                   <th
                     key={header.id}
                     className={`
-                      text-white 
+                    text-white 
                       font-semibold 
                       uppercase 
                       text-left 
-                      px-4 py-3
-                      text-xs
+                      px-3 py-2 text-[11px]
                       tracking-wider
                       sticky top-0
                       ${
@@ -513,6 +519,7 @@ export default function CampaignOverviewTable({ data }: Props) {
                           : ""
                       }
                     `}
+                    
                   >
                     <div className="truncate">
                       {flexRender(
@@ -540,8 +547,7 @@ export default function CampaignOverviewTable({ data }: Props) {
                     <td
                       key={cell.id}
                       className={`
-                        px-4 
-                        py-2
+                        px-2 py-1 text-xs
                         border-b border-purple-100/40
                         ${
                           index < row.getVisibleCells().length - 1

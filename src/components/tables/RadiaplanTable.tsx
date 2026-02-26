@@ -75,9 +75,10 @@ function CustomDropdown({
   };
 
   const handleSelectAll = () => {
-    const allFilteredSelected = filteredOptions.length > 0 && 
+    const allFilteredSelected =
+      filteredOptions.length > 0 &&
       filteredOptions.every((opt) => selectedOptions.includes(opt));
-  
+
     if (allFilteredSelected) {
       // If all filtered options are selected, deselect EVERYTHING
       onSelectionChange([]);
@@ -111,13 +112,11 @@ function CustomDropdown({
         onClick={() => !disabled && setIsOpen(!isOpen)}
         disabled={disabled}
         className={`
-          px-4 py-2.5
-          border-2 border-purple-300 
-          rounded-xl 
-          flex items-center gap-2
-          min-w-[100px]
-          justify-between 
-          text-sm
+          px-3 py-1.5 text-xs rounded-lg
+border-2 border-purple-300
+flex items-center gap-2
+min-w-[90px]
+justify-between
           ${
             disabled
               ? "opacity-50 cursor-not-allowed bg-gray-100"
@@ -125,9 +124,7 @@ function CustomDropdown({
           }
         `}
       >
-        <span className="font-medium truncate text-gray-700">
-          {label} 
-        </span>
+        <span className="font-medium truncate text-gray-700">{label}</span>
         <svg
           className={`w-4 h-4 text-purple-500 transition-transform ${
             isOpen ? "rotate-180" : ""
@@ -146,7 +143,7 @@ function CustomDropdown({
       </button>
 
       {isOpen && !disabled && (
-        <div className="absolute z-50 mt-2 w-72 bg-white border border-purple-200 rounded-xl shadow-xl max-h-64 overflow-y-auto">
+        <div className="absolute z-50 mt-2 w-72 bg-white border border-purple-200 rounded-xl shadow-xl max-h-52 overflow-y-auto">
           <div className="p-3 border-b border-purple-100">
             <input
               type="text"
@@ -200,7 +197,7 @@ export default function RadiaplanTable({
   data,
   selectedAgency,
   selectedAdvertiser,
-  selectedChannel, 
+  selectedChannel,
 }: Props) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
@@ -208,7 +205,7 @@ export default function RadiaplanTable({
   const [selectedAdvertisers, setSelectedAdvertisers] = useState<string[]>([]);
   const [selectedCampaignIds, setSelectedCampaignIds] = useState<string[]>([]);
   const [selectedChannels, setSelectedChannels] = useState<string[]>([]); // Add channels state
-console.log(selectedChannel)
+  console.log(selectedChannel);
   // Get ALL unique options from data
   const allAgencies = useMemo(
     () =>
@@ -247,9 +244,7 @@ console.log(selectedChannel)
     if (filteredData.length === 0) return;
 
     // Get all column headers
-    const headers = table
-      .getAllLeafColumns()
-      .map((col) => col.id);
+    const headers = table.getAllLeafColumns().map((col) => col.id);
 
     // Convert rows
     const csvRows = filteredData.map((row) =>
@@ -295,46 +290,46 @@ console.log(selectedChannel)
   // Effect to automatically select values when props change
   useEffect(() => {
     if (data.length === 0) return;
-  
+
     let filtered = data;
-  
+
     if (selectedAgency) {
-      filtered = filtered.filter(row => row.AGENCY_NAME === selectedAgency);
+      filtered = filtered.filter((row) => row.AGENCY_NAME === selectedAgency);
     }
-  
+
     if (selectedAdvertiser && selectedAdvertiser !== "__AGENCY_ONLY__") {
-      filtered = filtered.filter(row => row.ADVERTISER_NAME === selectedAdvertiser);
+      filtered = filtered.filter(
+        (row) => row.ADVERTISER_NAME === selectedAdvertiser
+      );
     }
-  
+
     if (selectedChannel) {
-      filtered = filtered.filter(row => row.CHANNEL === selectedChannel);
+      filtered = filtered.filter((row) => row.CHANNEL === selectedChannel);
     }
-  
+
     // Now extract dropdown options from filtered result
-  
+
     const agenciesToSelect = Array.from(
-      new Set(filtered.map(d => d.AGENCY_NAME || "").filter(Boolean))
+      new Set(filtered.map((d) => d.AGENCY_NAME || "").filter(Boolean))
     ).sort();
-  
+
     const advertisersToSelect = Array.from(
-      new Set(filtered.map(d => d.ADVERTISER_NAME || "").filter(Boolean))
+      new Set(filtered.map((d) => d.ADVERTISER_NAME || "").filter(Boolean))
     ).sort();
-  
+
     const campaignsToSelect = Array.from(
-      new Set(filtered.map(d => d.CAMPAIGN_ID || "").filter(Boolean))
+      new Set(filtered.map((d) => d.CAMPAIGN_ID || "").filter(Boolean))
     ).sort();
-  
+
     const channelsToSelect = Array.from(
-      new Set(filtered.map(d => d.CHANNEL || "").filter(Boolean))
+      new Set(filtered.map((d) => d.CHANNEL || "").filter(Boolean))
     ).sort();
-  
+
     setSelectedAgencies(agenciesToSelect);
     setSelectedAdvertisers(advertisersToSelect);
     setSelectedCampaignIds(campaignsToSelect);
     setSelectedChannels(channelsToSelect);
-  
   }, [data, selectedAgency, selectedAdvertiser, selectedChannel]);
-  
 
   // Agency options
   const agencyOptions = useMemo(() => {
@@ -431,7 +426,7 @@ console.log(selectedChannel)
   // Initialize with all options (only when no props are provided)
   useEffect(() => {
     if (data.length === 0) return;
-  
+
     // If no external filters are applied,
     // always reset to full dataset
     if (!selectedAdvertiser && !selectedAgency && !selectedChannel) {
@@ -440,12 +435,19 @@ console.log(selectedChannel)
       setSelectedCampaignIds(allCampaigns);
       setSelectedChannels(allChannels);
     }
-  
-  }, [data, selectedAdvertiser, selectedAgency, selectedChannel, allAgencies, allAdvertisers, allCampaigns, allChannels]);
-  
+  }, [
+    data,
+    selectedAdvertiser,
+    selectedAgency,
+    selectedChannel,
+    allAgencies,
+    allAdvertisers,
+    allCampaigns,
+    allChannels,
+  ]);
+
   // Filter data
   const filteredData = useMemo(() => {
-
     // 🔴 If any filter is completely empty → show nothing
     if (
       selectedAgencies.length === 0 ||
@@ -455,7 +457,7 @@ console.log(selectedChannel)
     ) {
       return [];
     }
-  
+
     return data.filter((row) => {
       return (
         selectedAgencies.includes(row.AGENCY_NAME || "") &&
@@ -464,8 +466,13 @@ console.log(selectedChannel)
         selectedChannels.includes(row.CHANNEL || "")
       );
     });
-  
-  }, [data, selectedAgencies, selectedAdvertisers, selectedCampaignIds, selectedChannels]);
+  }, [
+    data,
+    selectedAgencies,
+    selectedAdvertisers,
+    selectedCampaignIds,
+    selectedChannels,
+  ]);
 
   // Table columns
   const columns = useMemo<ColumnDef<CsvRow>[]>(() => {
@@ -477,10 +484,37 @@ console.log(selectedChannel)
     return Array.from(allKeys).map((key) => ({
       accessorKey: key,
       header: key.replace(/_/g, " "),
+    
+      // 👇 Increase width for CHANNEL & CAMPAIGN_NAME
+      size:
+        key === "CHANNEL"
+          ? 160
+          : key === "CAMPAIGN_NAME"
+          ? 160
+          : undefined,
+    
       cell: ({ getValue }) => {
         const value = getValue();
+    
+        // 👇 Special cell styling for wider columns
+        if (key === "CHANNEL") {
+          return (
+            <div className="whitespace-normal text-xs py-1 min-w-[120px]">
+              {value ? String(value) : "—"}
+            </div>
+          );
+        }
+    
+        if (key === "CAMPAIGN_NAME") {
+          return (
+            <div className="whitespace-normal text-xs py-1 min-w-[220px]">
+              {value ? String(value) : "—"}
+            </div>
+          );
+        }
+    
         return (
-          <div className="break-words whitespace-normal text-sm py-3">
+          <div className="truncate whitespace-normal text-xs py-1 leading-tight">
             {value ? String(value) : "—"}
           </div>
         );
@@ -527,9 +561,9 @@ console.log(selectedChannel)
   ]);
 
   return (
-    <div className="rounded-xl overflow-hidden border border-purple-200/40">
+    <div className="rounded-lg overflow-hidden border border-purple-200/40 max-w-[1200px] mx-auto text-sm">
       {/* FILTER BAR */}
-      <div className="p-4 border-b border-purple-200/40 bg-gradient-to-r from-purple-50 to-pink-50/30">
+      <div className="px-3 py-2 border-b border-purple-200/40 bg-gradient-to-r from-purple-50 to-pink-50/30">
         <div className="flex justify-between items-center">
           <div className="flex gap-3 flex-wrap">
             <CustomDropdown
@@ -577,13 +611,12 @@ console.log(selectedChannel)
                 selectedChannels.length === 0
               }
             />
-            
           </div>
 
           <div className="flex items-center gap-3">
             <button
               onClick={handleResetFilters}
-              className="px-4 py-2 bg-white border-2 border-purple-300 rounded-xl hover:bg-purple-50 transition-all text-sm font-medium"
+              className="px-3 py-1.5 text-xs bg-white border-2 border-purple-300 rounded-xl hover:bg-purple-50 transition-all font-medium"
             >
               Reset
             </button>
@@ -591,7 +624,7 @@ console.log(selectedChannel)
             <button
               onClick={handleExportCSV}
               disabled={filteredData.length === 0}
-              className="px-4 py-2.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl shadow-sm hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-all text-sm font-medium"
+              className="px-3 py-1.5 text-xs bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl shadow-sm hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-all font-medium"
             >
               Export CSV
             </button>
@@ -600,8 +633,8 @@ console.log(selectedChannel)
       </div>
 
       {/* TABLE */}
-      <div className="overflow-auto max-h-[calc(500vh-260px)] min-h-[300px]">
-        <table className="w-full">
+      <div className="overflow-auto max-h-[150vh] min-h-[250px]">
+      <table className="w-full text-xs">
           <thead className="sticky top-0 z-10">
             {table.getHeaderGroups().map((hg) => (
               <tr key={hg.id} className="bg-purple-600 ">
@@ -613,8 +646,7 @@ console.log(selectedChannel)
                       font-semibold 
                       uppercase 
                       text-left 
-                      px-4 py-3
-                      text-xs
+                      px-3 py-2 text-[11px]
                       tracking-wider
                       sticky top-0
                       ${
@@ -623,6 +655,14 @@ console.log(selectedChannel)
                           : ""
                       }
                     `}
+                    style={{
+                      width:
+                        header.column.id === "CHANNEL"
+                          ? "160px"
+                          : header.column.id === "CAMPAIGN_NAME"
+                          ? "220px"
+                          : undefined,
+                    }}
                   >
                     <div className="truncate">
                       {flexRender(
@@ -650,12 +690,11 @@ console.log(selectedChannel)
                     <td
                       key={cell.id}
                       className={`
-                        px-4 
-                        py-2
-                        border-b border-purple-100/40
+                        px-2 py-1 text-xs
+                        border-b border-purple-300/50
                         ${
                           index < row.getVisibleCells().length - 1
-                            ? "border-r border-purple-100/40"
+                            ? "border-r border-purple-300/50"
                             : ""
                         }
                       `}

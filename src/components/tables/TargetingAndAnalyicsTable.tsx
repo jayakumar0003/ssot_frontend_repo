@@ -17,6 +17,7 @@ import {
   ChevronRight,
   ChevronsLeft,
   ChevronsRight,
+  X,
 } from "lucide-react";
 import {
   Dialog,
@@ -36,9 +37,13 @@ interface Props {
   data: CsvRow[];
   onUpdateByPackage: (payload: CsvRow) => Promise<void>;
   onUpdateByPackageAndPlacement: (payload: CsvRow) => Promise<void>;
+  onUpdateAudienceInfo?: (
+    rowData: CsvRow,
+    selectedAudiences: string[]
+  ) => Promise<void>;
 }
 
-type EditMode = "PACKAGE" | "PACKAGE_AND_PLACEMENT" | null;
+type EditMode = "PACKAGE" | "PACKAGE_AND_PLACEMENT" | "AUDIENCE_INFO" | null;
 
 // Define read-only columns for the form - Updated from your other project
 const PACKAGE_READ_ONLY_COLUMNS = new Set([
@@ -168,7 +173,7 @@ function CustomDropdown({
           flex items-center gap-2
           min-w-[100px]
           justify-between 
-          text-sm
+          text-sx
           ${
             disabled
               ? "opacity-50 cursor-not-allowed bg-gray-100"
@@ -244,12 +249,281 @@ function CustomDropdown({
     </div>
   );
 }
+
+// New Audience Info Popup Component
+interface AudienceInfoPopupProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSubmit: (selectedAudiences: string[]) => void;
+  currentValue?: string;
+}
+
+function AudienceInfoPopup({
+  isOpen,
+  onClose,
+  onSubmit,
+  currentValue,
+}: AudienceInfoPopupProps) {
+  // Sample audience data - you can replace this with actual data later
+  const audienceOptions = [
+    "Tech Enthusiasts",
+    "Business Professionals",
+    "Students (18-24)",
+    "Young Professionals (25-34)",
+    "Parents with Young Children",
+    "Luxury Shoppers",
+    "Fitness Enthusiasts",
+    "Travel Lovers",
+    "Foodies",
+    "Gamers",
+    "Sports Fans",
+    "Movie Buffs",
+    "Music Lovers",
+    "Pet Owners",
+    "Home Improvement DIYers",
+    "Fashion Forward",
+    "Eco-Conscious Consumers",
+    "Early Adopters",
+    "Health & Wellness Seekers",
+    "Remote Workers",
+  ];
+
+  const [selectedAudiences, setSelectedAudiences] = useState<string[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Parse current value if it exists
+  useEffect(() => {
+    if (currentValue) {
+      // Assuming the current value is comma-separated
+      const parsed = currentValue
+        .split(",")
+        .map((item) => item.trim())
+        .filter(Boolean);
+      setSelectedAudiences(parsed);
+    }
+  }, [currentValue]);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
+        setIsDropdownOpen(false);
+      }
+    }
+
+    if (isDropdownOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+      return () =>
+        document.removeEventListener("mousedown", handleClickOutside);
+    }
+  }, [isDropdownOpen]);
+
+  const filteredOptions = audienceOptions.filter((option) =>
+    option.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const handleToggleOption = (option: string) => {
+    setSelectedAudiences((prev) => {
+      if (prev.includes(option)) {
+        return prev.filter((o) => o !== option);
+      } else {
+        return [...prev, option];
+      }
+    });
+  };
+
+  const handleSelectAll = () => {
+    const allFilteredSelected = filteredOptions.every((opt) =>
+      selectedAudiences.includes(opt)
+    );
+
+    if (allFilteredSelected) {
+      setSelectedAudiences((prev) =>
+        prev.filter((opt) => !filteredOptions.includes(opt))
+      );
+    } else {
+      setSelectedAudiences((prev) => [
+        ...new Set([...prev, ...filteredOptions]),
+      ]);
+    }
+  };
+
+  const handleRemoveAudience = (audience: string) => {
+    setSelectedAudiences((prev) => prev.filter((a) => a !== audience));
+  };
+
+  const handleSubmit = async () => {
+    setIsSubmitting(true);
+    try {
+      await onSubmit(selectedAudiences);
+      onClose();
+    } catch (error) {
+      console.error("Error:", error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const isAllSelected =
+    filteredOptions.length > 0 &&
+    filteredOptions.every((opt) => selectedAudiences.includes(opt));
+
+  return (
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-3xl bg-white border border-purple-200 rounded-2xl shadow-2xl overflow-visible">
+        <DialogHeader className="border-b border-purple-200 pb-3">
+          <DialogTitle className="text-lg font-semibold text-purple-700">
+            Select Audience Information
+          </DialogTitle>
+        </DialogHeader>
+
+        <div className="py-4 space-y-4">
+          {/* Dropdown + Buttons Row */}
+          <div className="flex justify-between gap-4">
+            {/* Dropdown */}
+            <div className="relative w-full max-w-[380px]" ref={dropdownRef}>
+              <button
+                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                className="w-full px-4 py-2.5 text-left border border-purple-300 rounded-lg bg-white hover:bg-purple-50 focus:outline-none focus:ring-2 focus:ring-purple-400 transition-all flex justify-between items-center"
+              >
+                <span className="text-sm text-gray-700">
+                  {selectedAudiences.length > 0
+                    ? `${selectedAudiences.length} selected`
+                    : "Select audiences"}
+                </span>
+
+                <svg
+                  className={`w-5 h-5 text-purple-500 transition-transform ${
+                    isDropdownOpen ? "rotate-180" : ""
+                  }`}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </button>
+
+              {isDropdownOpen && (
+                <div className="absolute left-0 mt-2 w-full bg-white border border-purple-200 rounded-lg shadow-lg max-h-[35vh] overflow-y-auto z-50">
+                  {/* Search */}
+                  <div className="p-2 border-b border-purple-100 sticky top-0 bg-white">
+                    <input
+                      type="text"
+                      placeholder="Search audiences..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="w-full px-2 py-1.5 text-sm border border-purple-200 rounded-md outline-none focus:ring-2 focus:ring-purple-400"
+                    />
+                  </div>
+
+                  {/* Select All */}
+                  <div
+                    onClick={handleSelectAll}
+                    className="flex items-center px-3 py-2 hover:bg-purple-50 cursor-pointer border-b border-purple-100 font-medium"
+                  >
+                    <span className="w-5 mr-2 flex items-center justify-center">
+                      {isAllSelected && (
+                        <Check className="h-4 w-4 text-purple-600" />
+                      )}
+                    </span>
+                    <span className="text-sm text-gray-700">Select All</span>
+                  </div>
+
+                  {/* Options */}
+                  {filteredOptions.map((option) => (
+                    <div
+                      key={option}
+                      onClick={() => handleToggleOption(option)}
+                      className="flex items-center px-3 py-2 hover:bg-purple-50 cursor-pointer"
+                    >
+                      <span className="w-5 mr-2 flex items-center justify-center">
+                        {selectedAudiences.includes(option) && (
+                          <Check className="h-4 w-4 text-purple-600" />
+                        )}
+                      </span>
+                      <span className="text-sm text-gray-700">{option}</span>
+                    </div>
+                  ))}
+
+                  {filteredOptions.length === 0 && (
+                    <div className="px-3 py-2 text-sm text-gray-500">
+                      No matching audiences found
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Buttons */}
+            <div className="flex gap-3 pt-1">
+              <Button
+                variant="outline"
+                onClick={onClose}
+                className="border-purple-300 text-purple-700 hover:bg-purple-50"
+              >
+                Cancel
+              </Button>
+
+              <Button
+                onClick={handleSubmit}
+                disabled={isSubmitting}
+                className="bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:opacity-90"
+              >
+                {isSubmitting ? "Submitting..." : "Submit"}
+              </Button>
+            </div>
+          </div>
+          {/* Selected audiences display */}
+          {selectedAudiences.length > 0 && (
+            <div className="p-3 bg-purple-50 rounded-lg border border-purple-200">
+              <label className="text-sm font-medium text-gray-700 mb-2 block">
+                Selected Audiences:
+              </label>
+
+              <div className="flex flex-wrap gap-2">
+                {selectedAudiences.map((audience) => (
+                  <span
+                    key={audience}
+                    className="inline-flex items-center gap-1 px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm"
+                  >
+                    {audience}
+                    <button
+                      onClick={() => handleRemoveAudience(audience)}
+                      className="hover:bg-purple-200 rounded-full p-0.5"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        <DialogFooter className="border-t border-purple-200 pt-4" />
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 const HIDDEN_COLUMNS = ["AGENCY_NAME", "ADVERTISER_NAME", "CAMPAIGN_ID"];
 
 export default function TargetingAndAnalyticsTable({
   data,
   onUpdateByPackage,
   onUpdateByPackageAndPlacement,
+  onUpdateAudienceInfo,
 }: Props) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
@@ -261,6 +535,12 @@ export default function TargetingAndAnalyticsTable({
   const [editMode, setEditMode] = useState<EditMode>(null);
   const [formData, setFormData] = useState<CsvRow>({});
   const [isSaving, setIsSaving] = useState(false);
+
+  // Audience info popup state
+  const [audiencePopupOpen, setAudiencePopupOpen] = useState(false);
+  const [currentAudienceRow, setCurrentAudienceRow] = useState<CsvRow | null>(
+    null
+  );
 
   const handleResetFilters = () => {
     setSelectedAgencies(allAgencies);
@@ -302,6 +582,28 @@ export default function TargetingAndAnalyticsTable({
     document.body.removeChild(link);
 
     URL.revokeObjectURL(url);
+  };
+
+  // In TargetingAndAnalyticsTable.tsx, update the handleAudienceSubmit function:
+
+  const handleAudienceSubmit = async (selectedAudiences: string[]) => {
+    if (currentAudienceRow && onUpdateAudienceInfo) {
+      try {
+        // Show loading state if needed
+        await onUpdateAudienceInfo(currentAudienceRow, selectedAudiences);
+
+        // Optional: Show success message
+        // You can add a toast notification here if you have one
+        console.log("Audience info updated successfully");
+
+        // Close the popup
+        setAudiencePopupOpen(false);
+        setCurrentAudienceRow(null);
+      } catch (error) {
+        console.error("Error updating audience info:", error);
+        alert("Failed to update audience info. Please try again.");
+      }
+    }
   };
 
   const allAgencies = useMemo(
@@ -462,7 +764,7 @@ export default function TargetingAndAnalyticsTable({
         if (key === "RADIA_OR_PRISMA_PACKAGE_NAME") {
           return (
             <div
-              className="break-words whitespace-normal text-sm py-3 cursor-pointer"
+              className="truncate text-xs py-2 leading-tight whitespace-normal cursor-pointer"
               onClick={() => {
                 setFormData(row.original);
                 setEditMode("PACKAGE");
@@ -477,7 +779,7 @@ export default function TargetingAndAnalyticsTable({
         if (key === "PLACEMENTNAME") {
           return (
             <div
-              className="break-words whitespace-normal text-sm py-3 cursor-pointer"
+              className="truncate text-xs py-2 leading-tight whitespace-normal cursor-pointer"
               onClick={() => {
                 setFormData(row.original);
                 setEditMode("PACKAGE_AND_PLACEMENT");
@@ -488,8 +790,23 @@ export default function TargetingAndAnalyticsTable({
           );
         }
 
+        // Make AUDIENCE_INFO clickable to open the new audience popup
+        if (key === "AUDIENCE_INFO") {
+          return (
+            <div
+              className="truncate text-xs py-2 leading-tight whitespace-normal cursor-pointer"
+              onClick={() => {
+                setCurrentAudienceRow(row.original);
+                setAudiencePopupOpen(true);
+              }}
+            >
+              {value ? String(value) : "—"}
+            </div>
+          );
+        }
+
         return (
-          <div className="break-words whitespace-normal text-sm py-3">
+          <div className="truncate text-xs py-2 leading-tight">
             {value ? String(value) : "—"}
           </div>
         );
@@ -547,9 +864,9 @@ export default function TargetingAndAnalyticsTable({
   };
 
   return (
-    <div className="rounded-xl overflow-hidden border border-purple-200/40">
+    <div className="rounded-lg overflow-hidden border border-purple-200/40 max-w-[1200px] mx-auto text-sm">
       {/* FILTER BAR */}
-      <div className="p-4 border-b border-purple-200/40 bg-gradient-to-r from-purple-50 to-pink-50/30">
+      <div className="px-3 py-2 border-b border-purple-200/40 bg-gradient-to-r from-purple-50 to-pink-50/30">
         <div className="flex justify-between items-center flex-wrap gap-3">
           {/* LEFT SIDE FILTERS */}
           <div className="flex gap-3 flex-wrap">
@@ -589,7 +906,7 @@ export default function TargetingAndAnalyticsTable({
           <div className="flex items-center gap-3">
             <button
               onClick={handleResetFilters}
-              className="px-4 py-2 bg-white border-2 border-purple-300 rounded-xl hover:bg-purple-50 transition-all text-sm font-medium"
+              className="px-3 py-1.5 text-xs bg-white border-2 border-purple-300 rounded-xl hover:bg-purple-50 transition-all font-medium"
             >
               Reset
             </button>
@@ -597,7 +914,7 @@ export default function TargetingAndAnalyticsTable({
             <button
               onClick={handleExportCSV}
               disabled={filteredData.length === 0}
-              className="px-4 py-2.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl shadow-sm hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-all text-sm font-medium"
+              className="px-3 py-1.5 text-xs bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl shadow-sm hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-all font-medium"
             >
               Export CSV
             </button>
@@ -606,8 +923,8 @@ export default function TargetingAndAnalyticsTable({
       </div>
 
       {/* TABLE */}
-      <div className="overflow-auto max-h-[calc(150vh-300px)]">
-        <table className="w-full">
+      <div className="overflow-auto max-h-[155vh]">
+        <table className="w-full text-xs">
           <thead className="sticky top-0 z-10">
             {table.getHeaderGroups().map((hg) => (
               <tr key={hg.id} className="bg-purple-600">
@@ -619,8 +936,7 @@ export default function TargetingAndAnalyticsTable({
                       font-semibold 
                       uppercase 
                       text-left 
-                      px-4 py-3
-                      text-xs
+                      px-3 py-2 text-[11px]
                       tracking-wider
                       sticky top-0
                       ${
@@ -656,7 +972,7 @@ export default function TargetingAndAnalyticsTable({
                     <td
                       key={cell.id}
                       className={`
-                        px-2 
+                        px-2 py-1 text-xs
                         border-b border-purple-100/40
                         ${
                           index < row.getVisibleCells().length - 1
@@ -844,7 +1160,7 @@ export default function TargetingAndAnalyticsTable({
 
       {/* FORM DIALOG */}
       <Dialog
-        open={!!editMode}
+        open={editMode === "PACKAGE" || editMode === "PACKAGE_AND_PLACEMENT"}
         onOpenChange={(open) => {
           if (!open) {
             setEditMode(null);
@@ -889,8 +1205,12 @@ export default function TargetingAndAnalyticsTable({
                         }
                       }}
                       className={`
-                        ${readOnly ? "bg-gray-100 text-gray-500" : "focus:ring-2 focus:ring-purple-400"}
-                      `}                      
+                        ${
+                          readOnly
+                            ? "bg-gray-100 text-gray-500"
+                            : "focus:ring-2 focus:ring-purple-400"
+                        }
+                      `}
                     />
                   </div>
                 );
@@ -917,6 +1237,17 @@ export default function TargetingAndAnalyticsTable({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* New Audience Info Popup */}
+      <AudienceInfoPopup
+        isOpen={audiencePopupOpen}
+        onClose={() => {
+          setAudiencePopupOpen(false);
+          setCurrentAudienceRow(null);
+        }}
+        onSubmit={handleAudienceSubmit}
+        currentValue={currentAudienceRow?.AUDIENCE_INFO}
+      />
     </div>
   );
 }
