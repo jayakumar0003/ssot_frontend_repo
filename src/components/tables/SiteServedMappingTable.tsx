@@ -114,7 +114,7 @@ const SiteServedMappingTable = () => {
         header: "Package Name",
         cell: ({ row, getValue }) => (
           <div
-            className="cursor-pointer text-[#000050] font-medium"
+            className="cursor-pointer text-[#000050] "
             onClick={() => {
               setFormData(row.original);
               setEditMode("EDIT");
@@ -133,7 +133,7 @@ const SiteServedMappingTable = () => {
         header: "Placement Name",
         cell: ({ row, getValue }) => (
           <div
-            className="cursor-pointer text-[#000050] font-medium"
+            className="cursor-pointer text-[#000050]"
             onClick={() => {
               setFormData(row.original);
               setEditMode("EDIT");
