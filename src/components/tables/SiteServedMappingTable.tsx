@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
   flexRender,
   getCoreRowModel,
@@ -6,6 +6,16 @@ import {
   getPaginationRowModel,
   type ColumnDef,
 } from "@tanstack/react-table";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "../ui/dialog";
+import { ScrollArea } from "../ui/scroll-area";
+import { Button } from "../ui/button";
+import { Input } from "../ui/input";
 
 type RowData = {
   PACKAGE_NAME: string;
@@ -39,11 +49,16 @@ type RowData = {
 };
 
 const SiteServedMappingTable = () => {
+  const [editMode, setEditMode] = useState<"EDIT" | null>(null);
+  const [formData, setFormData] = useState<RowData | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const NON_EDITABLE_FIELDS = new Set(["PACKAGE_NAME", "PLACEMENT_NAME"]);
+
   // ---------------------------
   // 1️⃣ Static Data
   // ---------------------------
-  const data = useMemo<RowData[]>(
-    () => [
+  const [tableData, setTableData] = useState<RowData[]>([
       {
         PACKAGE_NAME:
           "GroupmNexus_2026_BIC_Atlanta_English_Standard Display_IPPE Package_Industries_NA_Cross-Device_DCPM_Awareness_Geo_3P_ABM_P3C8P9L",
@@ -87,9 +102,7 @@ const SiteServedMappingTable = () => {
         LIST_3P_TRACKERS: "",
         SUBMITTED_TO_ADOPS: "",
       },
-    ],
-    []
-  );
+]);
 
   // ---------------------------
   // 2️⃣ Column Definitions with custom width for LINK_DESCRIPTION
@@ -99,6 +112,17 @@ const SiteServedMappingTable = () => {
       {
         accessorKey: "PACKAGE_NAME",
         header: "Package Name",
+        cell: ({ row, getValue }) => (
+          <div
+            className="cursor-pointer text-[#000050] font-medium"
+            onClick={() => {
+              setFormData(row.original);
+              setEditMode("EDIT");
+            }}
+          >
+            {getValue() as string}
+          </div>
+        ),
       },
       {
         accessorKey: "LINE_ITEM_BREAKOUT",
@@ -107,6 +131,17 @@ const SiteServedMappingTable = () => {
       {
         accessorKey: "PLACEMENT_NAME",
         header: "Placement Name",
+        cell: ({ row, getValue }) => (
+          <div
+            className="cursor-pointer text-[#000050] font-medium"
+            onClick={() => {
+              setFormData(row.original);
+              setEditMode("EDIT");
+            }}
+          >
+            {getValue() as string}
+          </div>
+        ),
       },
       {
         accessorKey: "ROTATION",
@@ -158,7 +193,7 @@ const SiteServedMappingTable = () => {
         // Add custom styling for this column
         cell: ({ getValue }) => (
           <div className="whitespace-pre-line break-words min-w-[300px] ">
-            {getValue() as string || "—"}
+            {(getValue() as string) || "—"}
           </div>
         ),
       },
@@ -220,7 +255,7 @@ const SiteServedMappingTable = () => {
   // 3️⃣ Table Instance
   // ---------------------------
   const table = useReactTable({
-    data,
+    data: tableData,
     columns,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
@@ -230,6 +265,30 @@ const SiteServedMappingTable = () => {
       },
     },
   });
+
+  const handleSubmit = async () => {
+    if (!formData) return;
+  
+    try {
+      setIsSaving(true);
+  
+      setTableData((prev) =>
+        prev.map((row) =>
+          row.PACKAGE_NAME === formData.PACKAGE_NAME &&
+          row.PLACEMENT_NAME === formData.PLACEMENT_NAME
+            ? formData
+            : row
+        )
+      );
+  
+      setEditMode(null);
+      setFormData(null);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   return (
     <div className="rounded-lg overflow-hidden border border-purple-200/40 max-w-full mx-auto text-sm bg-white">
@@ -242,12 +301,12 @@ const SiteServedMappingTable = () => {
                 {hg.headers.map((header) => {
                   // Apply special styling to the LINK_DESCRIPTION header
                   const isLinkDescription = header.id === "LINK_DESCRIPTION";
-                  
+
                   return (
                     <th
                       key={header.id}
                       className={`text-white font-semibold uppercase px-2 py-1.5 text-[9px] tracking-wider border-r border-[#000050]/30 ${
-                        isLinkDescription ? 'min-w-[300px]' : ''
+                        isLinkDescription ? "min-w-[300px]" : ""
                       }`}
                     >
                       <div className="truncate">
@@ -273,13 +332,14 @@ const SiteServedMappingTable = () => {
               >
                 {row.getVisibleCells().map((cell) => {
                   // Check if this is the LINK_DESCRIPTION cell
-                  const isLinkDescription = cell.column.id === "LINK_DESCRIPTION";
-                  
+                  const isLinkDescription =
+                    cell.column.id === "LINK_DESCRIPTION";
+
                   return (
                     <td
                       key={cell.id}
                       className={`px-2 text-[10px] border-b border-[#000050]/30 border-r ${
-                        isLinkDescription ? 'min-w-[300px] max-w-[400px]' : ''
+                        isLinkDescription ? "min-w-[300px] max-w-[400px]" : ""
                       }`}
                     >
                       {flexRender(
@@ -324,6 +384,77 @@ const SiteServedMappingTable = () => {
           </div>
         </div>
       )}
+      {/* FORM DIALOG */}
+      <Dialog
+        open={editMode === "EDIT"}
+        onOpenChange={(open) => {
+          if (!open) {
+            setEditMode(null);
+          }
+        }}
+      >
+        <DialogContent
+          className="max-w-4xl max-h-[85vh] bg-white border border-purple-200 rounded-2xl shadow-2xl"
+          onOpenAutoFocus={(e) => e.preventDefault()}
+        >
+          <DialogHeader className="border-b border-purple-200 pb-3">
+            <DialogTitle className="text-lg font-semibold text-[#000050]">
+              Edit Site Served Mapping
+            </DialogTitle>
+          </DialogHeader>
+          <ScrollArea className="h-[60vh] pr-4 bg-purple-50/30 rounded-lg p-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-1">
+              {formData &&
+                Object.entries(formData).map(([key, value]) => {
+                  const readOnly = NON_EDITABLE_FIELDS.has(key);
+                  return (
+                    <div key={key} className="space-y-2">
+                      <label className="text-sm font-medium text-gray-700">
+                        {key.replace(/_/g, " ")}
+                      </label>
+                      <Input
+                        type="text"
+                        value={value || ""}
+                        readOnly={readOnly}
+                        disabled={readOnly}
+                        onChange={(e) => {
+                          if (!readOnly && formData) {
+                            setFormData({
+                              ...formData,
+                              [key]: e.target.value,
+                            });
+                          }
+                        }}
+                        className={
+                          readOnly
+                            ? "bg-gray-100 text-gray-500"
+                            : "focus:ring-2 focus:ring-[#000050]"
+                        }
+                      />
+                    </div>
+                  );
+                })}
+            </div>
+          </ScrollArea>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setEditMode(null);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSubmit}
+              disabled={isSaving}
+              className="min-w-[140px] bg-[#000050] text-white"
+            >
+              {isSaving ? "Submitting..." : "Save Changes"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
