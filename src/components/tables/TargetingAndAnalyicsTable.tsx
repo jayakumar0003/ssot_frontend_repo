@@ -167,13 +167,11 @@ function CustomDropdown({
         onClick={() => !disabled && setIsOpen(!isOpen)}
         disabled={disabled}
         className={`
-          px-3 py-2
-          border-2 border-purple-300 
-          rounded-xl 
-          flex items-center gap-2
-          min-w-[100px]
-          justify-between 
-          text-sx
+          px-3 py-1.5 text-xs rounded-lg
+border-2 border-purple-300
+flex items-center gap-2
+min-w-[90px]
+justify-between
           ${
             disabled
               ? "opacity-50 cursor-not-allowed bg-gray-100"
@@ -750,68 +748,94 @@ export default function TargetingAndAnalyticsTable({
   // Table columns with two clickable columns
   const columns = useMemo<ColumnDef<CsvRow>[]>(() => {
     if (data.length === 0) return [];
+
     const allKeys = new Set<string>();
     data.forEach((row) => {
       Object.keys(row).forEach((key) => allKeys.add(key));
     });
-    return Array.from(allKeys).map((key) => ({
-      accessorKey: key,
-      header: key.replace(/_/g, " "),
-      cell: ({ getValue, row }) => {
-        const value = getValue();
 
-        // Make RADIA_OR_PRISMA_PACKAGE_NAME clickable to open package edit form
-        if (key === "RADIA_OR_PRISMA_PACKAGE_NAME") {
+    const keysArray = Array.from(allKeys);
+
+    const result: ColumnDef<CsvRow>[] = [];
+
+    keysArray.forEach((key) => {
+      // Add actual column
+      result.push({
+        accessorKey: key,
+        header: key === "PIXELS_FLOODLIGHT" ? "PIXELS" : key.replace(/_/g, " "),
+        cell: ({ getValue, row }) => {
+          const value = getValue();
+
+          if (key === "RADIA_OR_PRISMA_PACKAGE_NAME") {
+            return (
+              <div
+                className="truncate text-[10px] leading-tight whitespace-normal cursor-pointer"
+                onClick={() => {
+                  setFormData(row.original);
+                  setEditMode("PACKAGE");
+                }}
+              >
+                {value ? String(value) : "—"}
+              </div>
+            );
+          }
+
+          if (key === "PLACEMENTNAME") {
+            return (
+              <div
+                className="truncate text-[10px] leading-tight whitespace-normal cursor-pointer"
+                onClick={() => {
+                  setFormData(row.original);
+                  setEditMode("PACKAGE_AND_PLACEMENT");
+                }}
+              >
+                {value ? String(value) : "—"}
+              </div>
+            );
+          }
+
+          if (key === "AUDIENCE_INFO") {
+            return (
+              <div
+                className="truncate text-[10px] leading-tight whitespace-normal cursor-pointer"
+                onClick={() => {
+                  setCurrentAudienceRow(row.original);
+                  setAudiencePopupOpen(true);
+                }}
+              >
+                {value ? String(value) : "—"}
+              </div>
+            );
+          }
+
           return (
-            <div
-              className="truncate text-xs py-2 leading-tight whitespace-normal cursor-pointer"
-              onClick={() => {
-                setFormData(row.original);
-                setEditMode("PACKAGE");
-              }}
-            >
+            <div className="truncate text-[10px] leading-tight">
               {value ? String(value) : "—"}
             </div>
           );
-        }
+        },
+      });
 
-        // Make PLACEMENTNAME clickable to open package & placement edit form
-        if (key === "PLACEMENTNAME") {
-          return (
-            <div
-              className="truncate text-xs py-2 leading-tight whitespace-normal cursor-pointer"
-              onClick={() => {
-                setFormData(row.original);
-                setEditMode("PACKAGE_AND_PLACEMENT");
-              }}
-            >
-              {value ? String(value) : "—"}
-            </div>
-          );
-        }
+      // ✅ Insert TYPE column immediately after PIXELS_FLOODLIGHT
+      if (key === "PIXELS_FLOODLIGHT") {
+        result.push({
+          id: "TYPE",
+          header: "TYPE",
+          cell: () => (
+            <div className="truncate text-[10px] leading-tight">—</div>
+          ),
+        });
+      }
+    });
 
-        // Make AUDIENCE_INFO clickable to open the new audience popup
-        if (key === "AUDIENCE_INFO") {
-          return (
-            <div
-              className="truncate text-xs py-2 leading-tight whitespace-normal cursor-pointer"
-              onClick={() => {
-                setCurrentAudienceRow(row.original);
-                setAudiencePopupOpen(true);
-              }}
-            >
-              {value ? String(value) : "—"}
-            </div>
-          );
-        }
+    // ✅ Add COMMENTS column at the end
+    result.push({
+      id: "COMMENTS",
+      header: "COMMENTS",
+      cell: () => <div className="truncate text-[10px] leading-tight">—</div>,
+    });
 
-        return (
-          <div className="truncate text-xs py-2 leading-tight">
-            {value ? String(value) : "—"}
-          </div>
-        );
-      },
-    }));
+    return result;
   }, [data]);
 
   useEffect(() => {
@@ -864,7 +888,7 @@ export default function TargetingAndAnalyticsTable({
   };
 
   return (
-    <div className="rounded-lg overflow-hidden border border-purple-200/40 max-w-full mx-auto text-sm">
+    <div className="rounded-lg overflow-hidden border border-purple-200/40 max-w-screen mx-auto text-sm">
       {/* FILTER BAR */}
       <div className="px-3 py-2 border-b border-purple-200/40 bg-gradient-to-r from-purple-50 to-pink-50/30">
         <div className="flex justify-between items-center flex-wrap gap-3">
@@ -934,9 +958,8 @@ export default function TargetingAndAnalyticsTable({
                     className={`
                       text-white 
                       font-semibold 
-                      uppercase 
-                      text-left 
-                      px-3 py-2 text-[11px]
+                      uppercase  
+                      px-2 py-1.5 text-[9px]
                       tracking-wider
                       sticky top-0
                       ${
@@ -973,7 +996,7 @@ export default function TargetingAndAnalyticsTable({
                       key={cell.id}
                       className={`
                         px-2 py-1 text-xs
-                        border-b border-purple-100/40
+                        border-b border-[#000050]/30
                         ${
                           index < row.getVisibleCells().length - 1
                             ? "border-r border-[#000050]/30"
@@ -1173,7 +1196,7 @@ export default function TargetingAndAnalyticsTable({
           onOpenAutoFocus={(e) => e.preventDefault()}
         >
           <DialogHeader className="border-b border-purple-200 pb-3">
-            <DialogTitle className="text-lg font-semibold text-purple-700">
+            <DialogTitle className="text-lg font-semibold text-[#000050]">
               {editMode === "PACKAGE"
                 ? "Edit Based On Package"
                 : "Edit Based On Package & Placement"}
@@ -1230,7 +1253,7 @@ export default function TargetingAndAnalyticsTable({
             <Button
               onClick={handleSubmit}
               disabled={isSaving}
-              className="min-w-[140px]"
+              className="min-w-[140px] bg-[#000050] text-white"
             >
               {isSaving ? "Submitting..." : "Save Changes"}
             </Button>

@@ -7,6 +7,9 @@ import RadiaplanTable, { CsvRow } from "@/components/tables/RadiaplanTable";
 import MediaplanTable from "@/components/tables/MediaplanTable";
 import CampaignOverviewTable from "@/components/tables/CampaignOverviewTable";
 import TargetingAndAnalyticsTable from "@/components/tables/TargetingAndAnalyicsTable";
+import SiteServedMappingTable from "@/components/tables/SiteServedMappingTable";
+import StudiesBLSTable from "@/components/tables/StudiesBLSTable";
+import PrismaExport from "@/components/tables/PrismaExport";
 import {
   fetchMediaPlanApi,
   updateMediaPlanAndTargetingApi,
@@ -27,48 +30,61 @@ const tabs = [
   { id: "media-plan", label: "Media Plan" },
   { id: "campaign-overview", label: "Campaign Overview" },
   { id: "targeting-analytics", label: "Targeting & Analytics" },
+  { id: "site-served-mapping", label: "Site Served Mapping" },
+  { id: "studies-BLS", label: "Studies BLS" },
+  { id: "prisma-export", label: "Prisma Export" },
 ];
 
 const TablePage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { radiaPlanData: contextData } = useData();
-  
+
   // Get selected advertiser, agency, and channel from navigation state
   const initialAdvertiser = location.state?.selectedAdvertiser || "";
   const initialAgency = location.state?.selectedAgency || "";
   const initialChannel = location.state?.selectedChannel || ""; // Add channel
-  
+
   const [activeTab, setActiveTab] = useState(
     location.state?.activeTab || "radia-plan"
   );
-  const [selectedAdvertiser, setSelectedAdvertiser] = useState(initialAdvertiser);
+  const [selectedAdvertiser, setSelectedAdvertiser] =
+    useState(initialAdvertiser);
   const [selectedAgency, setSelectedAgency] = useState(initialAgency);
   const [selectedChannel, setSelectedChannel] = useState(initialChannel); // Add channel state
 
   // State for each tab's data
   const [radiaPlanData, setRadiaPlanData] = useState<CsvRow[]>([]);
   const [mediaPlanData, setMediaPlanData] = useState<CsvRow[]>([]);
-  const [campaignOverviewData, setCampaignOverviewData] = useState<CsvRow[]>([]);
-  const [targetingAnalyticsData, setTargetingAnalyticsData] = useState<CsvRow[]>([]);
+  const [campaignOverviewData, setCampaignOverviewData] = useState<CsvRow[]>(
+    []
+  );
+  const [targetingAnalyticsData, setTargetingAnalyticsData] = useState<
+    CsvRow[]
+  >([]);
 
   // State for loading and error for each tab
   const [radiaPlanLoading, setRadiaPlanLoading] = useState(true);
   const [mediaPlanLoading, setMediaPlanLoading] = useState(false);
   const [campaignOverviewLoading, setCampaignOverviewLoading] = useState(false);
-  const [targetingAnalyticsLoading, setTargetingAnalyticsLoading] = useState(false);
+  const [targetingAnalyticsLoading, setTargetingAnalyticsLoading] =
+    useState(false);
 
   const [radiaPlanError, setRadiaPlanError] = useState<string | null>(null);
   const [mediaPlanError, setMediaPlanError] = useState<string | null>(null);
-  const [campaignOverviewError, setCampaignOverviewError] = useState<string | null>(null);
-  const [targetingAnalyticsError, setTargetingAnalyticsError] = useState<string | null>(null);
+  const [campaignOverviewError, setCampaignOverviewError] = useState<
+    string | null
+  >(null);
+  const [targetingAnalyticsError, setTargetingAnalyticsError] = useState<
+    string | null
+  >(null);
 
   useEffect(() => {
     if (location.state) {
       const newAgency = location.state?.selectedAgency || "";
       const newAdvertiser = location.state?.selectedAdvertiser || "";
       const newChannel = location.state?.selectedChannel || ""; // Add channel
-      
+
       setSelectedAgency(newAgency);
       setSelectedAdvertiser(newAdvertiser);
       setSelectedChannel(newChannel); // Set channel
@@ -194,21 +210,24 @@ const TablePage = () => {
     }
   }
 
-// In TablePage.tsx where you implement updateAudienceInfo
-async function updateAudienceInfo(rowData: CsvRow, selectedAudiences: string[]) {
-  try {
-    await updateAudienceInfoApi(
-      rowData.RADIA_OR_PRISMA_PACKAGE_NAME,
-      rowData.PLACEMENTNAME,
-      selectedAudiences
-    );
-    await loadTargetingAnalyticsData();
-    // Add toast notification here if you have one // or use a toast
-  } catch (err) {
-    alert("Failed to update audience info");
-    throw err;
+  // In TablePage.tsx where you implement updateAudienceInfo
+  async function updateAudienceInfo(
+    rowData: CsvRow,
+    selectedAudiences: string[]
+  ) {
+    try {
+      await updateAudienceInfoApi(
+        rowData.RADIA_OR_PRISMA_PACKAGE_NAME,
+        rowData.PLACEMENTNAME,
+        selectedAudiences
+      );
+      await loadTargetingAnalyticsData();
+      // Add toast notification here if you have one // or use a toast
+    } catch (err) {
+      alert("Failed to update audience info");
+      throw err;
+    }
   }
-}
 
   // Load other data when tab changes
   useEffect(() => {
@@ -269,13 +288,13 @@ async function updateAudienceInfo(rowData: CsvRow, selectedAudiences: string[]) 
   // Helper function to get the current filter status display
   const getFilterStatus = () => {
     const parts = [];
-    
+
     if (selectedAgency) parts.push(`Agency: ${selectedAgency}`);
     if (selectedAdvertiser && selectedAdvertiser !== "__AGENCY_ONLY__") {
       parts.push(`Advertiser: ${selectedAdvertiser}`);
     }
     if (selectedChannel) parts.push(`Channel: ${selectedChannel}`);
-    
+
     if (parts.length === 0) {
       return "Showing all data";
     } else if (selectedAdvertiser === "__AGENCY_ONLY__" && selectedAgency) {
@@ -290,13 +309,14 @@ async function updateAudienceInfo(rowData: CsvRow, selectedAudiences: string[]) 
     switch (activeTab) {
       case "radia-plan":
         return (
-          <div className="bg-white rounded-xl shadow-lg p-4">
-            
+          <div className="bg-white rounded-xl shadow-lg p-2">
             {radiaPlanLoading ? (
               <div className="flex flex-col justify-center items-center h-64">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mb-4"></div>
                 <div className="text-gray-500">Loading Radia Plan data...</div>
-                <p className="text-sm text-gray-400 mt-2">This may take a moment</p>
+                <p className="text-sm text-gray-400 mt-2">
+                  This may take a moment
+                </p>
               </div>
             ) : radiaPlanError ? (
               <div className="flex flex-col items-center justify-center h-64">
@@ -312,7 +332,7 @@ async function updateAudienceInfo(rowData: CsvRow, selectedAudiences: string[]) 
               </div>
             ) : radiaPlanData.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-64">
-                <div className="text-gray-500 text-center p-4">
+                <div className="text-gray-500 text-center p-2">
                   No Radia Plan data available
                 </div>
                 <button
@@ -323,8 +343,8 @@ async function updateAudienceInfo(rowData: CsvRow, selectedAudiences: string[]) 
                 </button>
               </div>
             ) : (
-              <RadiaplanTable 
-                data={radiaPlanData} 
+              <RadiaplanTable
+                data={radiaPlanData}
                 selectedAdvertiser={selectedAdvertiser}
                 selectedAgency={selectedAgency}
                 selectedChannel={selectedChannel} // Pass the channel prop
@@ -335,7 +355,7 @@ async function updateAudienceInfo(rowData: CsvRow, selectedAudiences: string[]) 
 
       case "media-plan":
         return (
-          <div className="bg-white rounded-xl shadow-lg p-4">
+          <div className="bg-white rounded-xl shadow-lg p-2">
             {mediaPlanLoading ? (
               <div className="flex flex-col justify-center items-center h-64">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mb-4"></div>
@@ -343,7 +363,7 @@ async function updateAudienceInfo(rowData: CsvRow, selectedAudiences: string[]) 
               </div>
             ) : mediaPlanError ? (
               <div className="flex flex-col items-center justify-center h-64">
-                <div className="text-red-500 text-center p-4">
+                <div className="text-red-500 text-center p-2">
                   {mediaPlanError}
                 </div>
                 <button
@@ -364,7 +384,7 @@ async function updateAudienceInfo(rowData: CsvRow, selectedAudiences: string[]) 
 
       case "campaign-overview":
         return (
-          <div className="bg-white rounded-xl shadow-lg p-4">
+          <div className="bg-white rounded-xl shadow-lg p-2">
             {campaignOverviewLoading ? (
               <div className="flex justify-center items-center h-64">
                 <div className="text-gray-500">
@@ -373,7 +393,7 @@ async function updateAudienceInfo(rowData: CsvRow, selectedAudiences: string[]) 
               </div>
             ) : campaignOverviewError ? (
               <div className="flex flex-col items-center justify-center h-64">
-                <div className="text-red-500 text-center p-4">
+                <div className="text-red-500 text-center p-2">
                   {campaignOverviewError}
                 </div>
                 <button
@@ -391,7 +411,7 @@ async function updateAudienceInfo(rowData: CsvRow, selectedAudiences: string[]) 
 
       case "targeting-analytics":
         return (
-          <div className="bg-white rounded-xl shadow-lg p-4">
+          <div className="bg-white rounded-xl shadow-lg p-2">
             {targetingAnalyticsLoading ? (
               <div className="flex justify-center items-center h-64">
                 <div className="text-gray-500">
@@ -400,7 +420,7 @@ async function updateAudienceInfo(rowData: CsvRow, selectedAudiences: string[]) 
               </div>
             ) : targetingAnalyticsError ? (
               <div className="flex flex-col items-center justify-center h-64">
-                <div className="text-red-500 text-center p-4">
+                <div className="text-red-500 text-center p-2">
                   {targetingAnalyticsError}
                 </div>
                 <button
@@ -420,6 +440,24 @@ async function updateAudienceInfo(rowData: CsvRow, selectedAudiences: string[]) 
             )}
           </div>
         );
+      case "site-served-mapping":
+        return (
+          <div className="bg-white rounded-xl shadow-lg p-2">
+            <SiteServedMappingTable />
+          </div>
+        );
+      case "studies-BLS":
+        return (
+          <div className="bg-white rounded-xl shadow-lg p-2">
+            <StudiesBLSTable />
+          </div>
+        );
+      case "prisma-export":
+        return (
+          <div className="bg-white rounded-xl shadow-lg p-2">
+            <PrismaExport />
+          </div>
+        );
 
       default:
         return null;
@@ -434,10 +472,10 @@ async function updateAudienceInfo(rowData: CsvRow, selectedAudiences: string[]) 
       <div className="fixed top-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-sm border-b border-purple-200/40">
         <div className="px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            
-            <h1 
-            onClick={() => navigate("/", { state: { preserveData: true } })}
-            className="text-3xl font-extrabold flex flex-wrap gap-x-3 leading-tight cursor-pointer">
+            <h1
+              onClick={() => navigate("/", { state: { preserveData: true } })}
+              className="text-3xl font-extrabold flex flex-wrap gap-x-3 leading-tight cursor-pointer"
+            >
               {title.split(" ").map((word, wordIndex) => (
                 <span key={wordIndex} className="flex items-end">
                   {word.split("").map((char, charIndex) => (
@@ -464,7 +502,7 @@ async function updateAudienceInfo(rowData: CsvRow, selectedAudiences: string[]) 
       </div>
 
       {/* Always Open NavPanel on Left */}
-      <div className="fixed left-2 top-0 h-full w-60 pt-20">
+      <div className="fixed left-2 top-0 h-full w-56 pt-20">
         <div className="h-full bg-white/95 backdrop-blur-sm border-r rounded-xl border-purple-200/40">
           <div className="p-4">
             <div className="space-y-1">
@@ -478,17 +516,16 @@ async function updateAudienceInfo(rowData: CsvRow, selectedAudiences: string[]) 
                       : "text-gray-700 hover:bg-purple-50"
                   }`}
                 >
-                  <div className="flex items-center">{tab.label}</div>
+                  <div className="flex text-sm font-medium items-center">{tab.label}</div>
                 </button>
               ))}
             </div>
-            
           </div>
         </div>
       </div>
 
       {/* Main Content Area */}
-      <div className="pl-64 pt-20 p-6">
+      <div className="pl-60 pt-20 p-2">
         {/* Tab Content */}
         <motion.div
           key={activeTab}

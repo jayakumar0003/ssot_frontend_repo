@@ -378,8 +378,8 @@ export default function CampaignOverviewTable({ data }: Props) {
           <div
             className={
               key === "FLIGHT"
-                ? "whitespace-normal text-xs py-2 min-w-[150px]"
-                : "truncate whitespace-normal text-xs py-2 leading-tight"
+                ? "whitespace-normal text-[10px] py-2 min-w-[120px]"
+                : "truncate whitespace-normal text-[10px] py-1 leading-tight"
             }
           >
             {value ? String(value) : "—"}
@@ -438,7 +438,7 @@ export default function CampaignOverviewTable({ data }: Props) {
   }, [data, selectedAgencies, selectedAdvertisers, selectedCampaignIds]);
 
   return (
-    <div className="rounded-lg overflow-hidden border border-purple-200/40 max-w-[1200px] mx-auto text-sm">
+    <div className="rounded-lg overflow-hidden border border-purple-200/40 max-w-screen mx-auto text-sm">
       {/* FILTER BAR */}
       <div className="px-3 py-2 border-b border-purple-200/40 bg-gradient-to-r from-purple-50 to-pink-50/30">
         <div className="flex justify-between items-center flex-wrap gap-3">
@@ -509,8 +509,7 @@ export default function CampaignOverviewTable({ data }: Props) {
                     text-white 
                       font-semibold 
                       uppercase 
-                      text-left 
-                      px-3 py-2 text-[11px]
+                      px-2 py-1.5 text-[9px]
                       tracking-wider
                       sticky top-0
                       ${
@@ -547,8 +546,8 @@ export default function CampaignOverviewTable({ data }: Props) {
                     <td
                       key={cell.id}
                       className={`
-                        px-2 py-1 text-xs
-                        border-b border-purple-100/40
+                        px-2 py-1 text-[10px]
+                        border-b border-[#000050]/30
                         ${
                           index < row.getVisibleCells().length - 1
                             ? "border-r border-[#000050]/30"

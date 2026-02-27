@@ -431,10 +431,10 @@ export default function MediaplanTable({ data, onSubmitMediaPlan }: Props) {
         const value = getValue();
 
         // PLACEMENT clickable
-        if (key === "PLACEMENT" || key === "PLACMENT") {
+        if (key === "PLACEMENT" || key === "PLACMENT" || key === "CAMPAIGN_NAME") {
           return (
             <div
-              className="truncate text-xs py-1 leading-tight whitespace-normal cursor-pointer"
+              className="truncate text-[10px] leading-tight whitespace-normal cursor-pointer"
               onClick={() => {
                 setFormData(row.original);
                 setOpenDialog(true);
@@ -448,14 +448,14 @@ export default function MediaplanTable({ data, onSubmitMediaPlan }: Props) {
         // 👇 Special styling for FLIGHT column
         if (key === "FLIGHT") {
           return (
-            <div className="whitespace-normal text-xs py-1 min-w-[150px]">
+            <div className="whitespace-normal text-[10px] min-w-[120px]">
               {value ? String(value) : "—"}
             </div>
           );
         }
 
         return (
-          <div className="truncate text-xs py-1 leading-tight whitespace-normal">
+          <div className="truncate text-[10px]  leading-tight whitespace-normal">
             {value ? String(value) : "—"}
           </div>
         );
@@ -502,7 +502,7 @@ export default function MediaplanTable({ data, onSubmitMediaPlan }: Props) {
   };
 
   return (
-    <div className="rounded-lg overflow-hidden border border-purple-200/40 max-w-[1200px] mx-auto text-sm">
+    <div className="rounded-lg overflow-hidden border border-purple-200/40 max-w-screen mx-auto text-sm">
       {/* FILTER BAR */}
       <div className="px-3 py-2 border-b border-purple-200/40 bg-gradient-to-r from-purple-50 to-pink-50/30">
         <div className="flex justify-between items-center flex-wrap gap-3">
@@ -573,8 +573,7 @@ export default function MediaplanTable({ data, onSubmitMediaPlan }: Props) {
                       text-white 
                       font-semibold 
                       uppercase 
-                      text-left 
-                      px-3 py-2 text-[11px]
+                      px-2 py-1.5 text-[9px]
                       tracking-wider
                       sticky top-0
                       ${
@@ -611,7 +610,7 @@ export default function MediaplanTable({ data, onSubmitMediaPlan }: Props) {
                       key={cell.id}
                       className={`
                         px-2 py-1 text-xs
-                        border-b border-purple-100/40
+                        border-b border-[#000050]/30
                         ${
                           index < row.getVisibleCells().length - 1
                             ? "border-r border-[#000050]/30"
@@ -803,7 +802,7 @@ export default function MediaplanTable({ data, onSubmitMediaPlan }: Props) {
           onOpenAutoFocus={(e) => e.preventDefault()}
         >
           <DialogHeader className="border-b border-purple-200 pb-3">
-            <DialogTitle className="text-lg font-semibold text-purple-700">
+            <DialogTitle className="text-lg font-semibold text-[#000050]">
               Edit Media Plan
             </DialogTitle>
           </DialogHeader>
@@ -832,7 +831,7 @@ export default function MediaplanTable({ data, onSubmitMediaPlan }: Props) {
                         ${
                           readOnly
                             ? "bg-gray-100 text-gray-500"
-                            : "focus:ring-2 focus:ring-purple-400"
+                            : "focus:ring-2 focus:ring-[#000050]"
                         }
                       `}
                     />
@@ -848,7 +847,7 @@ export default function MediaplanTable({ data, onSubmitMediaPlan }: Props) {
             <Button
               onClick={handleSubmit}
               disabled={isSubmitting}
-              className="min-w-[130px]"
+              className="min-w-[130px] bg-[#000050] text-white"
             >
               {isSubmitting
                 ? "Submitting..."

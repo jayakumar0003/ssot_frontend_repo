@@ -488,9 +488,9 @@ export default function RadiaplanTable({
       // 👇 Increase width for CHANNEL & CAMPAIGN_NAME
       size:
         key === "CHANNEL"
-          ? 160
+          ? 120
           : key === "CAMPAIGN_NAME"
-          ? 160
+          ? 120
           : undefined,
     
       cell: ({ getValue }) => {
@@ -499,7 +499,7 @@ export default function RadiaplanTable({
         // 👇 Special cell styling for wider columns
         if (key === "CHANNEL") {
           return (
-            <div className="whitespace-normal text-xs py-1 min-w-[120px]">
+            <div className="whitespace-normal text-[10px] py-1 min-w-[80px]">
               {value ? String(value) : "—"}
             </div>
           );
@@ -507,14 +507,14 @@ export default function RadiaplanTable({
     
         if (key === "CAMPAIGN_NAME") {
           return (
-            <div className="whitespace-normal text-xs py-1 min-w-[220px]">
+            <div className="whitespace-normal text-[10px] py-1 min-w-[150px]">
               {value ? String(value) : "—"}
             </div>
           );
         }
     
         return (
-          <div className="truncate whitespace-normal text-xs py-1 leading-tight">
+          <div className="truncate whitespace-normal text-[10px] py-1 leading-tight">
             {value ? String(value) : "—"}
           </div>
         );
@@ -561,7 +561,7 @@ export default function RadiaplanTable({
   ]);
 
   return (
-    <div className="rounded-lg overflow-hidden border border-purple-200/40 max-w-[1200px] mx-auto text-sm">
+    <div className="rounded-lg overflow-hidden border border-purple-200/40 max-w-screen mx-auto text-sm">
       {/* FILTER BAR */}
       <div className="px-3 py-2 border-b border-purple-200/40 bg-gradient-to-r from-purple-50 to-pink-50/30">
         <div className="flex justify-between items-center">
@@ -633,7 +633,7 @@ export default function RadiaplanTable({
       </div>
 
       {/* TABLE */}
-      <div className="overflow-auto max-h-[150vh] min-h-[250px]">
+      <div className="overflow-auto max-h-[150vh] ">
       <table className="w-full text-xs">
           <thead className="sticky top-0 z-10">
             {table.getHeaderGroups().map((hg) => (
@@ -644,9 +644,8 @@ export default function RadiaplanTable({
                     className={`
                       text-white 
                       font-semibold 
-                      uppercase 
-                      text-left 
-                      px-3 py-2 text-[11px]
+                      uppercase  
+                      px-2 py-1.5 text-[9px]
                       tracking-wider
                       sticky top-0
                       ${
@@ -690,11 +689,11 @@ export default function RadiaplanTable({
                     <td
                       key={cell.id}
                       className={`
-                        px-2 py-1 text-xs
+                        px-1.5 py-1 text-xs
                         border-b border-[#000050]/30
                         ${
                           index < row.getVisibleCells().length - 1
-                            ? "border-r border-purple-300/50"
+                            ? "border-r border-[#000050]/30"
                             : ""
                         }
                       `}
