@@ -167,14 +167,14 @@ justify-between
       </button>
 
       {isOpen && !disabled && (
-        <div className="absolute z-50 mt-2 w-72 bg-white border border-purple-200 rounded-xl shadow-xl max-h-52 overflow-y-auto">
+        <div className="absolute z-50 mt-2 w-64 bg-white border border-purple-200 rounded-xl shadow-xl max-h-52 overflow-y-auto">
           <div className="p-3 border-b border-purple-100">
             <input
               type="text"
               placeholder="Search..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full px-3 py-2 text-sm border border-purple-200 rounded-lg outline-none focus:ring-2 focus:ring-purple-400"
+              className="w-full px-3 py-2 text-[12px] border border-purple-200 rounded-lg outline-none focus:ring-2 focus:ring-purple-400"
             />
           </div>
 
@@ -185,7 +185,7 @@ justify-between
             <span className="w-5 mr-2 flex items-center justify-center">
               {isAllSelected && <Check className="h-4 w-4 text-purple-600" />}
             </span>
-            <span className="text-sm text-gray-700">Select All</span>
+            <span className="text-[12px] text-gray-700">Select All</span>
           </div>
 
           <div className="border-t border-purple-100"></div>
@@ -201,13 +201,13 @@ justify-between
                     <Check className="h-4 w-4 text-purple-600" />
                   )}
                 </span>
-                <span className="text-sm text-gray-700 truncate">{option}</span>
+                <span className="text-[12px] text-gray-700 truncate">{option}</span>
               </div>
             </div>
           ))}
 
           {filteredOptions.length === 0 && (
-            <div className="px-4 py-2.5 text-sm text-gray-500">
+            <div className="px-4 py-2.5 text-[12px] text-gray-500">
               No matching results
             </div>
           )}

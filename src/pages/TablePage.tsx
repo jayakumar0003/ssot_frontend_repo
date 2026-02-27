@@ -516,7 +516,7 @@ const TablePage = () => {
                       : "text-gray-700 hover:bg-purple-50"
                   }`}
                 >
-                  <div className="flex text-sm font-medium items-center">{tab.label}</div>
+                  <div className="flex text-[14px] font-medium items-center">{tab.label}</div>
                 </button>
               ))}
             </div>
