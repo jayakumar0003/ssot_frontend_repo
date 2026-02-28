@@ -2,7 +2,7 @@ import React from 'react'
 
 const StudiesBLSTable = () => {
   return (
-    <div>StudiesBLSTable</div>
+    <div>Studies BLS Table</div>
   )
 }
 

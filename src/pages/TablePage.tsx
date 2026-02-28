@@ -23,6 +23,9 @@ import {
   updateByPackageApi,
 } from "@/api/targeting.api";
 import { useData } from "@/context/DataContext";
+import AtvAvailsCaseTable from "@/components/tables/AtvAvailsCaseTable";
+import AdvDoohAvailsCaseTable from "@/components/tables/AdvDoohAvailsCaseTable";
+import AdvDoohJourneysExportTable from "@/components/tables/AdvDoohJourneysExport";
 
 // Define the tab structure
 const tabs = [
@@ -33,6 +36,9 @@ const tabs = [
   { id: "site-served-mapping", label: "Site Served Mapping" },
   { id: "studies-BLS", label: "Studies BLS" },
   { id: "prisma-export", label: "Prisma Export" },
+  { id: "atv-avails-case", label: "ATV - Avails Case" },
+  { id: "adv-dooh-avails-case", label: "AdvDOOH - Avails Case (Ref)" },
+  { id: "adv-dooh-journeys-export", label: "AdvDOOH Journeys Export" },
 ];
 
 const TablePage = () => {
@@ -458,6 +464,24 @@ const TablePage = () => {
             <PrismaExport />
           </div>
         );
+      case "atv-avails-case":
+        return (
+          <div className="bg-white rounded-xl shadow-lg p-2">
+            <AtvAvailsCaseTable />
+          </div>
+        );
+      case "adv-dooh-avails-case":
+        return (
+          <div className="bg-white rounded-xl shadow-lg p-2">
+            <AdvDoohAvailsCaseTable />
+          </div>
+        );
+      case "adv-dooh-journeys-export":
+        return (
+          <div className="bg-white rounded-xl shadow-lg p-2">
+            <AdvDoohJourneysExportTable />
+          </div>
+        );
 
       default:
         return null;
@@ -502,7 +526,7 @@ const TablePage = () => {
       </div>
 
       {/* Always Open NavPanel on Left */}
-      <div className="fixed left-2 top-0 h-full w-56 pt-20">
+      <div className="fixed left-2 top-0 h-full w-60 pt-20">
         <div className="h-full bg-white/95 backdrop-blur-sm border-r rounded-xl border-purple-200/40">
           <div className="p-4">
             <div className="space-y-1">
@@ -510,13 +534,15 @@ const TablePage = () => {
                 <button
                   key={tab.id}
                   onClick={() => handleNavigate(tab.id)}
-                  className={`w-full text-left px-4 py-3 rounded-xl transition-all ${
+                  className={`w-full text-left px-2 py-3 rounded-xl transition-all ${
                     activeTab === tab.id
                       ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg"
                       : "text-gray-700 hover:bg-purple-50"
                   }`}
                 >
-                  <div className="flex text-[14px] font-medium items-center">{tab.label}</div>
+                  <div className="flex text-[14px] font-medium items-center">
+                    {tab.label}
+                  </div>
                 </button>
               ))}
             </div>
@@ -525,7 +551,7 @@ const TablePage = () => {
       </div>
 
       {/* Main Content Area */}
-      <div className="pl-60 pt-20 p-2">
+      <div className="pl-64 pt-20 p-2">
         {/* Tab Content */}
         <motion.div
           key={activeTab}
