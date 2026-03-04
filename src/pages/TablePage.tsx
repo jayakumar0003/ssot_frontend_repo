@@ -22,6 +22,11 @@ import {
   updateByPackageAndPlacementApi,
   updateByPackageApi,
 } from "@/api/targeting.api";
+import {
+  fetchStudiesBlsApi,
+  createStudiesBlsApi,
+  updateStudiesBlsApi,
+} from "@/api/studies.api";
 import { useData } from "@/context/DataContext";
 import AtvAvailsCaseTable from "@/components/tables/AtvAvailsCaseTable";
 import AdvDoohAvailsCaseTable from "@/components/tables/AdvDoohAvailsCaseTable";
@@ -84,6 +89,11 @@ const TablePage = () => {
   const [targetingAnalyticsError, setTargetingAnalyticsError] = useState<
     string | null
   >(null);
+
+  const [studiesBlsData, setStudiesBlsData] = useState<CsvRow[]>([]);
+  const [studiesBlsLoading, setStudiesBlsLoading] = useState(false);
+  const [studiesBlsError, setStudiesBlsError] = useState<string | null>(null);
+  const [selectedStudiesPackage, setSelectedStudiesPackage] = useState("");
 
   useEffect(() => {
     if (location.state) {
@@ -184,6 +194,27 @@ const TablePage = () => {
     }
   };
 
+  const loadStudiesBlsData = async () => {
+    try {
+      setStudiesBlsLoading(true);
+
+      if (targetingAnalyticsData.length === 0) {
+        await loadTargetingAnalyticsData();
+      }
+
+      const data = await fetchStudiesBlsApi();
+
+      setStudiesBlsData(data);
+      setStudiesBlsError(null);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Unknown error";
+
+      setStudiesBlsError(`Failed to load Studies BLS data: ${errorMessage}`);
+    } finally {
+      setStudiesBlsLoading(false);
+    }
+  };
+
   // Update handlers
   async function updateByPackage(payload: CsvRow) {
     try {
@@ -235,6 +266,48 @@ const TablePage = () => {
     }
   }
 
+  // Add this with the other update functions in TablePage.tsx
+  async function updateStudiesBLS(payload: any) {
+    try {
+      const formattedPayload = {
+        PACKAGE_NAME: payload.packageName,
+        BLS_MEASUREMENT: payload.measurement,
+
+        SURVEY_COMPANIES: payload["Survey Companies"],
+        SURVEY_METHODOLOGY: payload["Survey Methodology"],
+        CAMPAIGN_OBJECTIVE_KPI: payload["Campaign Objective/KPI"],
+        AD_SPEND_MINIMUMS: payload["Ad Spend Minimums"],
+        AD_SET_CHANNEL_TYPES: payload["Ad Set Channel Types"],
+        STUDY_FEES: payload["Study Fees"],
+        STUDY_BRAND_SAFETY: payload["Study Brand Safety"],
+        SURVEY_QUESTIONS: payload["Survey Questions"],
+        TARGET_AUDIENCE: payload["Target Audience"],
+        FLIGHT_DATES: payload["Flight Dates"],
+        BRAND: payload["Brand"],
+      };
+
+      // 🔹 Check if row already exists
+      const existingRow = studiesBlsData.find(
+        (row) =>
+          row.PACKAGE_NAME === formattedPayload.PACKAGE_NAME &&
+          row.BLS_MEASUREMENT === formattedPayload.BLS_MEASUREMENT
+      );
+
+      if (existingRow) {
+        // UPDATE
+        await updateStudiesBlsApi(formattedPayload);
+      } else {
+        // CREATE
+        await createStudiesBlsApi(formattedPayload);
+      }
+
+      // Refresh table
+      await loadStudiesBlsData();
+    } catch (err) {
+      alert("Failed to save Studies BLS data");
+      throw err;
+    }
+  }
   // Load other data when tab changes
   useEffect(() => {
     switch (activeTab) {
@@ -251,6 +324,11 @@ const TablePage = () => {
       case "targeting-analytics":
         if (targetingAnalyticsData.length === 0 && !targetingAnalyticsLoading) {
           loadTargetingAnalyticsData();
+        }
+        break;
+      case "studies-BLS":
+        if (studiesBlsData.length === 0 && !studiesBlsLoading) {
+          loadStudiesBlsData();
         }
         break;
       default:
@@ -455,7 +533,21 @@ const TablePage = () => {
       case "studies-BLS":
         return (
           <div className="bg-white rounded-xl shadow-lg p-2">
-            <StudiesBLSTable />
+            {studiesBlsLoading ? (
+              <div className="flex justify-center items-center h-64">
+                <div className="text-gray-500">Loading Studies BLS data...</div>
+              </div>
+            ) : studiesBlsError ? (
+              <div className="text-red-500 text-center">{studiesBlsError}</div>
+            ) : (
+              <StudiesBLSTable
+                targetingData={targetingAnalyticsData}
+                studiesData={studiesBlsData}
+                selectedPackage={selectedStudiesPackage}
+                setSelectedPackage={setSelectedStudiesPackage}
+                onSubmit={updateStudiesBLS}
+              />
+            )}
           </div>
         );
       case "prisma-export":
