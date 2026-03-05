@@ -94,6 +94,12 @@ const TablePage = () => {
   const [studiesBlsLoading, setStudiesBlsLoading] = useState(false);
   const [studiesBlsError, setStudiesBlsError] = useState<string | null>(null);
   const [selectedStudiesPackage, setSelectedStudiesPackage] = useState("");
+  const [selectedStudiesPackages, setSelectedStudiesPackages] = useState<
+    string[]
+  >([]);
+  const [expandedStudiesPackages, setExpandedStudiesPackages] = useState<
+    Set<string>
+  >(new Set());
 
   useEffect(() => {
     if (location.state) {
@@ -546,6 +552,10 @@ const TablePage = () => {
                 selectedPackage={selectedStudiesPackage}
                 setSelectedPackage={setSelectedStudiesPackage}
                 onSubmit={updateStudiesBLS}
+                selectedPackages={selectedStudiesPackages}
+                setSelectedPackages={setSelectedStudiesPackages}
+                expandedPackages={expandedStudiesPackages}
+                setExpandedPackages={setExpandedStudiesPackages}
               />
             )}
           </div>
