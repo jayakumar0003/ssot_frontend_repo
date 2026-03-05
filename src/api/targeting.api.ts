@@ -1,6 +1,6 @@
 export type CsvRow = Record<string, string>;
 
-const BASE_URL = "http://localhost:3000/api/targeting";
+const BASE_URL = "https://ssot-backend.vercel.app/api/targeting";
 
 // -----------------------------
 // FETCH TARGETING DATA
