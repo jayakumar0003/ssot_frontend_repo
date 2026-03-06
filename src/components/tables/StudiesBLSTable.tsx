@@ -438,54 +438,7 @@ const StudiesBLSTable = ({
       <div className="px-4 py-3 bg-gradient-to-r from-purple-50 to-pink-50/30 border-b border-purple-200/40">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <div className="relative">
-              <label className="block text-xs font-semibold text-purple-700 mb-1 tracking-wide">
-                PACKAGE NAME
-              </label>
-              <div className="relative">
-                <div className="relative w-[320px]">
-                  <button
-                    onClick={() => setDropdownOpen(!dropdownOpen)}
-                    className="w-full text-sm border-2 border-purple-300 rounded-lg px-3 py-2 bg-white flex items-center"
-                  >
-                    <span className="truncate flex-1 text-left">
-                      {selectedPackages.length === 0
-                        ? "Select Package"
-                        : selectedPackages.join(", ")}
-                    </span>
-
-                    <ChevronDown
-                      className={`w-4 h-4 text-purple-500 ml-2 flex-shrink-0 transition-transform ${
-                        dropdownOpen ? "rotate-180" : ""
-                      }`}
-                    />
-                  </button>
-
-                  {dropdownOpen && (
-                    <div className="absolute z-50 mt-2 bg-white border border-purple-200 rounded-xl shadow-lg max-h-56 overflow-y-auto ">
-                      {packageOptions.map((pkg) => (
-                        <div
-                          key={pkg}
-                          onClick={() => togglePackage(pkg)}
-                          className="flex items-center px-3 py-2 hover:bg-purple-50 cursor-pointer"
-                        >
-                          <input
-                            type="checkbox"
-                            checked={selectedPackages.includes(pkg)}
-                            readOnly
-                            className="mr-2"
-                          />
-
-                          <span className="text-sm text-gray-700 whitespace-nowrap">
-                            {pkg}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
+            
             {/* CAMPAIGN START DATE FILTER */}
             <div>
               <label className="block text-xs font-semibold text-purple-700 mb-1 tracking-wide">
@@ -551,6 +504,54 @@ const StudiesBLSTable = ({
                   </div>
                 </PopoverContent>
               </Popover>
+            </div>
+            <div className="relative">
+              <label className="block text-xs font-semibold text-purple-700 mb-1 tracking-wide">
+                PACKAGE NAME
+              </label>
+              <div className="relative">
+                <div className="relative w-[320px]">
+                  <button
+                    onClick={() => setDropdownOpen(!dropdownOpen)}
+                    className="w-full text-sm border-2 border-purple-300 rounded-lg px-3 py-2 bg-white flex items-center"
+                  >
+                    <span className="truncate flex-1 text-left">
+                      {selectedPackages.length === 0
+                        ? "Select Package"
+                        : selectedPackages.join(", ")}
+                    </span>
+
+                    <ChevronDown
+                      className={`w-4 h-4 text-purple-500 ml-2 flex-shrink-0 transition-transform ${
+                        dropdownOpen ? "rotate-180" : ""
+                      }`}
+                    />
+                  </button>
+
+                  {dropdownOpen && (
+                    <div className="absolute z-50 mt-2 bg-white border border-purple-200 rounded-xl shadow-lg max-h-56 overflow-y-auto ">
+                      {packageOptions.map((pkg) => (
+                        <div
+                          key={pkg}
+                          onClick={() => togglePackage(pkg)}
+                          className="flex items-center px-3 py-2 hover:bg-purple-50 cursor-pointer"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={selectedPackages.includes(pkg)}
+                            readOnly
+                            className="mr-2"
+                          />
+
+                          <span className="text-sm text-gray-700 whitespace-nowrap">
+                            {pkg}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
 
