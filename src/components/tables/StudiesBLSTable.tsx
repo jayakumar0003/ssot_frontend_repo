@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -18,6 +18,7 @@ import {
   ChevronRight,
   FileText,
 } from "lucide-react";
+import { fetchPackagesByDateApi } from "@/api/studies.api";
 
 export type CsvRow = Record<string, string>;
 
@@ -68,6 +69,35 @@ const StudiesBLSTable = ({
   const [isSaving, setIsSaving] = useState(false);
   const [hoveredRow, setHoveredRow] = useState<string | null>(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+
+  const [campaignStartDate, setCampaignStartDate] = useState("");
+  const [campaignEndDate, setCampaignEndDate] = useState("");
+
+  useEffect(() => {
+    async function loadPackagesByDate() {
+      try {
+        if (!campaignStartDate && !campaignEndDate) {
+          setSelectedPackages([]);
+        }
+
+        const packages = await fetchPackagesByDateApi(
+          campaignStartDate,
+          campaignEndDate
+        );
+
+        if (packages.length === 0) {
+          setSelectedPackages([]);
+          return;
+        }
+
+        setSelectedPackages(packages);
+      } catch (error) {
+        console.error("Failed to fetch packages by date:", error);
+      }
+    }
+
+    loadPackagesByDate();
+  }, [campaignStartDate, campaignEndDate]);
 
   // Get unique packages
   const packageOptions = useMemo(() => {
@@ -377,6 +407,23 @@ const StudiesBLSTable = ({
     0
   );
 
+  const isFieldDisabled = (column: string) => {
+    const measurement = selectedMeasurement.toLowerCase();
+  
+    if (measurement === "bls" && column === "Campaign Objective/KPI") {
+      return true;
+    }
+  
+    if (
+      (measurement === "study1" || measurement === "study2") &&
+      column === "Ad Spend Minimums"
+    ) {
+      return true;
+    }
+  
+    return false;
+  };
+
   return (
     <div className="bg-white rounded-xl border border-purple-200/40 shadow-lg overflow-hidden">
       {/* FILTER BAR */}
@@ -431,6 +478,30 @@ const StudiesBLSTable = ({
                 </div>
               </div>
             </div>
+            {/* CAMPAIGN START DATE FILTER */}
+            <div>
+              <label className="block text-xs font-semibold text-purple-700 mb-1 tracking-wide">
+                CAMPAIGN START DATE
+              </label>
+
+              <div className="flex items-center gap-2">
+                <Input
+                  type="date"
+                  value={campaignStartDate}
+                  onChange={(e) => setCampaignStartDate(e.target.value)}
+                  className="border-2 border-purple-300 text-xs"
+                />
+
+                <span className="text-gray-400 text-xs">to</span>
+
+                <Input
+                  type="date"
+                  value={campaignEndDate}
+                  onChange={(e) => setCampaignEndDate(e.target.value)}
+                  className="border-2 border-purple-300 text-xs"
+                />
+              </div>
+            </div>
           </div>
 
           <Button
@@ -473,7 +544,11 @@ const StudiesBLSTable = ({
                     key={index}
                     className={`
                       uppercase font-semibold px-3 py-2.5 text-[10px] tracking-wider whitespace-nowrap border-r border-[#000050]/30 last:border-r-0
-                      ${isHighlight ? "bg-teal-700 text-white" : "bg-[#000050] text-white"}
+                      ${
+                        isHighlight
+                          ? "bg-teal-700 text-white"
+                          : "bg-[#000050] text-white"
+                      }
                       `}
                   >
                     {header}
@@ -640,15 +715,35 @@ const StudiesBLSTable = ({
                               <span className="text-gray-400">—</span>
                             )}
                           </td>
-                          <td className="px-3 py-2 border-b border-r border-[#000050]/30 text-[10px] text-gray-600">
-                            {item.data?.CAMPAIGN_OBJECTIVE_KPI || (
-                              <span className="text-gray-400">—</span>
-                            )}
+                          <td
+                            className={`px-3 py-2 border-b border-r border-[#000050]/30 text-[10px]
+                              ${
+                                item.measurement === "BLS"
+                                  ? "bg-gray-200 text-gray-400"
+                                  : "text-gray-600"
+                              }`}
+                          >
+                            {item.measurement === "BLS"
+                              ? ""
+                              : item.data?.CAMPAIGN_OBJECTIVE_KPI || (
+                                  <span className="text-gray-400">—</span>
+                                )}
                           </td>
-                          <td className="px-3 py-2 border-b border-r border-[#000050]/30 text-[10px] text-gray-600">
-                            {item.data?.AD_SPEND_MINIMUMS || (
-                              <span className="text-gray-400">—</span>
-                            )}
+                          <td
+                            className={`px-3 py-2 border-b border-r border-[#000050]/30 text-[10px]
+                              ${
+                                item.measurement === "study1" ||
+                                item.measurement === "study2"
+                                  ? "bg-gray-200 text-gray-400"
+                                  : "text-gray-600"
+                              }`}
+                          >
+                            {item.measurement === "Study1" ||
+                            item.measurement === "Study2"
+                              ? ""
+                              : item.data?.AD_SPEND_MINIMUMS || (
+                                  <span className="text-gray-400">—</span>
+                                )}
                           </td>
                           <td className="px-3 py-2 border-b border-r border-[#000050]/30 text-[10px] text-gray-600">
                             {item.data?.AD_SET_CHANNEL_TYPES || (
@@ -725,19 +820,28 @@ const StudiesBLSTable = ({
                 <Input value={selectedMeasurement || ""} readOnly disabled />
               </div>
 
-              {FORM_COLUMNS.map((column) => (
-                <div key={column} className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">
-                    {column}
-                  </label>
-                  <Input
-                    value={formData[column] || ""}
-                    onChange={(e) => handleInputChange(column, e.target.value)}
-                    className="focus:ring-2 focus:ring-purple-400"
-                    placeholder={`Enter ${column}`}
-                  />
-                </div>
-              ))}
+              {FORM_COLUMNS.map((column) => {
+                const disabled = isFieldDisabled(column);
+
+                if (disabled) return null; // completely remove the input
+
+                return (
+                  <div key={column} className="space-y-2">
+                    <label className="text-sm font-medium text-gray-700">
+                      {column}
+                    </label>
+
+                    <Input
+                      value={formData[column] || ""}
+                      onChange={(e) =>
+                        handleInputChange(column, e.target.value)
+                      }
+                      className="focus:ring-2 focus:ring-purple-400"
+                      placeholder={`Enter ${column}`}
+                    />
+                  </div>
+                );
+              })}
             </div>
           </ScrollArea>
 

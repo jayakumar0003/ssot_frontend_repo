@@ -52,3 +52,23 @@ export async function updateStudiesBlsApi(payload: CsvRow): Promise<void> {
     throw new Error(errorText || "Failed to update Studies BLS row");
   }
 }
+
+/* -----------------------------
+   FETCH PACKAGES BY DATE
+----------------------------- */
+export async function fetchPackagesByDateApi(
+  startDate: string,
+  endDate: string
+): Promise<string[]> {
+  const response = await fetch(
+    `${BASE_URL}/filter-packages-by-date?startDate=${startDate}&endDate=${endDate}`
+  );
+
+  if (!response.ok) {
+    throw new Error("Failed to fetch packages by date");
+  }
+
+  const result = await response.json();
+
+  return result.packages || [];
+}
