@@ -19,6 +19,15 @@ import {
   FileText,
 } from "lucide-react";
 import { fetchPackagesByDateApi } from "@/api/studies.api";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { CalendarIcon } from "lucide-react";
+import { format } from "date-fns";
+import { DateRange } from "react-day-picker";
 
 export type CsvRow = Record<string, string>;
 
@@ -70,20 +79,20 @@ const StudiesBLSTable = ({
   const [hoveredRow, setHoveredRow] = useState<string | null>(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
-  const [campaignStartDate, setCampaignStartDate] = useState("");
-  const [campaignEndDate, setCampaignEndDate] = useState("");
+  const [dateRange, setDateRange] = useState<DateRange | undefined>();
 
   useEffect(() => {
     async function loadPackagesByDate() {
       try {
-        if (!campaignStartDate && !campaignEndDate) {
+        if (!dateRange?.from || !dateRange?.to) {
           setSelectedPackages([]);
+          return;
         }
 
-        const packages = await fetchPackagesByDateApi(
-          campaignStartDate,
-          campaignEndDate
-        );
+        const start = format(dateRange.from, "yyyy-MM-dd");
+        const end = format(dateRange.to, "yyyy-MM-dd");
+
+        const packages = await fetchPackagesByDateApi(start, end);
 
         if (packages.length === 0) {
           setSelectedPackages([]);
@@ -97,7 +106,7 @@ const StudiesBLSTable = ({
     }
 
     loadPackagesByDate();
-  }, [campaignStartDate, campaignEndDate]);
+  }, [dateRange]);
 
   // Get unique packages
   const packageOptions = useMemo(() => {
@@ -409,18 +418,18 @@ const StudiesBLSTable = ({
 
   const isFieldDisabled = (column: string) => {
     const measurement = selectedMeasurement.toLowerCase();
-  
+
     if (measurement === "bls" && column === "Campaign Objective/KPI") {
       return true;
     }
-  
+
     if (
       (measurement === "study1" || measurement === "study2") &&
       column === "Ad Spend Minimums"
     ) {
       return true;
     }
-  
+
     return false;
   };
 
@@ -481,26 +490,68 @@ const StudiesBLSTable = ({
             {/* CAMPAIGN START DATE FILTER */}
             <div>
               <label className="block text-xs font-semibold text-purple-700 mb-1 tracking-wide">
-                CAMPAIGN START DATE
+                CAMPAIGN DATE RANGE
               </label>
 
-              <div className="flex items-center gap-2">
-                <Input
-                  type="date"
-                  value={campaignStartDate}
-                  onChange={(e) => setCampaignStartDate(e.target.value)}
-                  className="border-2 border-purple-300 text-xs"
-                />
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="w-[280px] justify-start text-left font-normal border-2 border-purple-300 bg-white hover:bg-purple-50 text-xs text-gray-700"
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
 
-                <span className="text-gray-400 text-xs">to</span>
+                    {dateRange?.from ? (
+                      dateRange.to ? (
+                        <>
+                          {format(dateRange.from, "MMM dd, yyyy")} →{" "}
+                          {format(dateRange.to, "MMM dd, yyyy")}
+                        </>
+                      ) : (
+                        format(dateRange.from, "MMM dd, yyyy")
+                      )
+                    ) : (
+                      <span>Select campaign date range</span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
 
-                <Input
-                  type="date"
-                  value={campaignEndDate}
-                  onChange={(e) => setCampaignEndDate(e.target.value)}
-                  className="border-2 border-purple-300 text-xs"
-                />
-              </div>
+                <PopoverContent
+                  align="start"
+                  className="w-auto p-0 bg-white border border-purple-200 rounded-xl shadow-xl"
+                >
+                  <div className="p-4 bg-white">
+                    <Calendar
+                      initialFocus
+                      mode="range"
+                      numberOfMonths={2}
+                      selected={dateRange}
+                      onSelect={setDateRange}
+                      className="text-xs"
+                      classNames={{
+                        months: "flex gap-3",
+                        month: "space-y-2",
+                        caption:
+                          "flex justify-center pt-1 relative items-center text-sm",
+                        caption_label: "text-sm font-medium",
+                        nav_button: "h-6 w-6",
+                        table: "w-full border-collapse space-y-1",
+                        head_row: "flex gap-1",
+                        head_cell:
+                          "text-gray-500 rounded-full w-7 font-normal text-[10px]",
+                        row: "flex gap-1 w-full mt-1",
+                        cell: "text-center text-xs p-0 relative [&:has([aria-selected])]:bg-purple-50 first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md",
+                        day: "h-7 w-7 p-0 font-normal text-xs",
+                        day_selected:
+                          "bg-[#000050] text-white rounded-full hover:bg-[#000050]/80 focus:bg-[#000050]",
+                        day_range_start: "bg-[#000050] text-white rounded-full",
+                        day_range_end: "bg-[#000050] text-white rounded-full",
+                        day_range_middle: "bg-[#000050] text-purple-900",
+                      }}
+                    />
+                  </div>
+                </PopoverContent>
+              </Popover>
             </div>
           </div>
 
