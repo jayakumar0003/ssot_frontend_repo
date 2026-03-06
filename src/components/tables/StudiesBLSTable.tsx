@@ -85,7 +85,6 @@ const StudiesBLSTable = ({
     async function loadPackagesByDate() {
       try {
         if (!dateRange?.from || !dateRange?.to) {
-          setSelectedPackages([]);
           return;
         }
 
@@ -520,7 +519,7 @@ const StudiesBLSTable = ({
                   align="start"
                   className="w-auto p-0 bg-white border border-purple-200 rounded-xl shadow-xl"
                 >
-                  <div className="p-4 bg-white">
+                  <div className="p-2 bg-white">
                     <Calendar
                       initialFocus
                       mode="range"
@@ -540,7 +539,7 @@ const StudiesBLSTable = ({
                         head_cell:
                           "text-gray-500 rounded-full w-7 font-normal text-[10px]",
                         row: "flex gap-1 w-full mt-1",
-                        cell: "text-center text-xs p-0 relative [&:has([aria-selected])]:bg-purple-50 first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md",
+                        cell: "text-center text-xs p-0 relative",
                         day: "h-7 w-7 p-0 font-normal text-xs",
                         day_selected:
                           "bg-[#000050] text-white rounded-full hover:bg-[#000050]/80 focus:bg-[#000050]",

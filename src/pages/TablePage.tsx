@@ -39,7 +39,7 @@ const tabs = [
   { id: "campaign-overview", label: "Campaign Overview" },
   { id: "targeting-analytics", label: "Targeting & Analytics" },
   { id: "site-served-mapping", label: "Site Served Mapping" },
-  { id: "studies-BLS", label: "Studies BLS" },
+  { id: "studies-BLS", label: "Measurement Study" },
   { id: "prisma-export", label: "Prisma Export" },
   { id: "atv-avails-case", label: "ATV - Avails Case" },
   { id: "adv-dooh-avails-case", label: "AdvDOOH - Avails Case (Ref)" },
