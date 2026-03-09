@@ -100,6 +100,9 @@ const TablePage = () => {
   const [expandedStudiesPackages, setExpandedStudiesPackages] = useState<
     Set<string>
   >(new Set());
+  const [checkedPackages, setCheckedPackages] = useState<Set<string>>(
+    new Set()
+  );
 
   useEffect(() => {
     if (location.state) {
@@ -293,17 +296,17 @@ const TablePage = () => {
       };
 
       // 🔹 Check if row already exists
-      const existingRow = studiesBlsData.find(
+      const packages = formattedPayload.PACKAGE_NAME.split(",");
+
+      const existingRows = studiesBlsData.filter(
         (row) =>
-          row.PACKAGE_NAME === formattedPayload.PACKAGE_NAME &&
+          packages.includes(row.PACKAGE_NAME) &&
           row.BLS_MEASUREMENT === formattedPayload.BLS_MEASUREMENT
       );
 
-      if (existingRow) {
-        // UPDATE
+      if (existingRows.length > 0) {
         await updateStudiesBlsApi(formattedPayload);
       } else {
-        // CREATE
         await createStudiesBlsApi(formattedPayload);
       }
 
@@ -556,6 +559,8 @@ const TablePage = () => {
                 setSelectedPackages={setSelectedStudiesPackages}
                 expandedPackages={expandedStudiesPackages}
                 setExpandedPackages={setExpandedStudiesPackages}
+                checkedPackages={checkedPackages}
+                setCheckedPackages={setCheckedPackages}
               />
             )}
           </div>

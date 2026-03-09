@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useMemo, useState, useEffect, useRef } from "react";
 import {
   Dialog,
   DialogContent,
@@ -43,6 +43,9 @@ interface Props {
 
   expandedPackages: Set<string>;
   setExpandedPackages: React.Dispatch<React.SetStateAction<Set<string>>>;
+
+  checkedPackages: Set<string>;
+  setCheckedPackages: React.Dispatch<React.SetStateAction<Set<string>>>;
 }
 
 // All the empty columns that should appear as input fields in the form
@@ -70,6 +73,8 @@ const StudiesBLSTable = ({
   setSelectedPackages,
   expandedPackages,
   setExpandedPackages,
+  checkedPackages,
+  setCheckedPackages,
 }: Props) => {
   const [formDialogOpen, setFormDialogOpen] = useState(false);
   const [selectedMeasurement, setSelectedMeasurement] = useState("");
@@ -80,6 +85,25 @@ const StudiesBLSTable = ({
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
+
+  const dropdownRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
+        setDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   useEffect(() => {
     async function loadPackagesByDate() {
@@ -126,15 +150,42 @@ const StudiesBLSTable = ({
     }
   };
 
-  // Toggle package expansion
-  const toggleExpandPackage = (pkg: string) => {
-    setExpandedPackages((prev) => {
+  const toggleRowCheckbox = (pkg: string) => {
+    setCheckedPackages((prev) => {
       const newSet = new Set(prev);
+
       if (newSet.has(pkg)) {
         newSet.delete(pkg);
       } else {
         newSet.add(pkg);
       }
+
+      return newSet;
+    });
+  };
+
+  // Toggle package expansion
+  const toggleExpandPackage = (pkg: string) => {
+    setExpandedPackages((prev) => {
+      const shouldExpandMultiple = checkedPackages.has(pkg);
+
+      // determine packages to toggle
+      const targetPackages = shouldExpandMultiple
+        ? Array.from(checkedPackages)
+        : [pkg];
+
+      const allExpanded = targetPackages.every((p) => prev.has(p));
+
+      // If already expanded → collapse
+      if (allExpanded) {
+        const newSet = new Set(prev);
+        targetPackages.forEach((p) => newSet.delete(p));
+        return newSet;
+      }
+
+      // Otherwise expand
+      const newSet = new Set(prev);
+      targetPackages.forEach((p) => newSet.add(p));
       return newSet;
     });
   };
@@ -375,10 +426,18 @@ const StudiesBLSTable = ({
   const handleSubmit = async () => {
     try {
       setIsSaving(true);
-      const currentSelectedPackage = selectedPackageForEdit;
+      // convert selected packages from checkbox
+      const packagesArray = Array.from(checkedPackages);
+
+      // fallback if nothing checked
+      const packagesToSend =
+        packagesArray.length > 0 ? packagesArray : [selectedPackageForEdit];
+
+      // join packages with comma
+      const packageString = packagesToSend.join(",");
 
       const payload = {
-        packageName: currentSelectedPackage,
+        packageName: packageString,
         measurement: selectedMeasurement,
         ...formData,
       };
@@ -438,7 +497,6 @@ const StudiesBLSTable = ({
       <div className="px-4 py-3 bg-gradient-to-r from-purple-50 to-pink-50/30 border-b border-purple-200/40">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            
             {/* CAMPAIGN START DATE FILTER */}
             <div>
               <label className="block text-xs font-semibold text-purple-700 mb-1 tracking-wide">
@@ -505,7 +563,7 @@ const StudiesBLSTable = ({
                 </PopoverContent>
               </Popover>
             </div>
-            <div className="relative">
+            <div className="relative" ref={dropdownRef}>
               <label className="block text-xs font-semibold text-purple-700 mb-1 tracking-wide">
                 PACKAGE NAME
               </label>
@@ -572,9 +630,41 @@ const StudiesBLSTable = ({
           {/* HEADER */}
           <thead className="sticky top-0 z-10">
             <tr className="bg-[#000050]">
+              {/* PACKAGE NAME HEADER WITH SELECT ALL */}
+              <th className="bg-teal-700 text-white px-3 py-2.5 text-[10px] uppercase font-semibold border-r border-[#000050]/30 w-[320px] min-w-[120px] text-center relative">
+              
+                  {checkedPackages.size > 0 && (
+                    <input
+                      type="checkbox"
+                      checked={
+                        selectedPackages.length > 0 &&
+                        selectedPackages.every((pkg) =>
+                          checkedPackages.has(pkg)
+                        )
+                      }
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setCheckedPackages(new Set(selectedPackages));
+                        } else {
+                          setCheckedPackages(new Set());
+                        }
+                      }}
+                      className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 cursor-pointer"
+                    />
+                  )}
+
+                  <span>Package Name</span>
+               
+              </th>
+
+              <th className="bg-teal-700 text-white px-3 py-2.5 text-[10px] uppercase font-semibold border-r border-[#000050]/30 w-[320px] min-w-[180px] text-center">
+                <div className="flex items-center justify-center gap-2">
+                  Measurement Studies
+                </div>
+              </th>
+
+              {/* OTHER HEADERS */}
               {[
-                "Package Name",
-                "Measurement Studies",
                 "Survey Companies",
                 "Survey Methodology",
                 "Campaign Objective/KPI",
@@ -586,26 +676,14 @@ const StudiesBLSTable = ({
                 "Target Audience",
                 "Flight Dates",
                 "Brand",
-              ].map((header, index) => {
-                const isHighlight =
-                  header === "Package Name" || header === "Measurement Studies";
-
-                return (
-                  <th
-                    key={index}
-                    className={`
-                      uppercase font-semibold px-3 py-2.5 text-[10px] tracking-wider whitespace-nowrap border-r border-[#000050]/30 last:border-r-0
-                      ${
-                        isHighlight
-                          ? "bg-teal-700 text-white"
-                          : "bg-[#000050] text-white"
-                      }
-                      `}
-                  >
-                    {header}
-                  </th>
-                );
-              })}
+              ].map((header, index) => (
+                <th
+                  key={index}
+                  className="bg-[#000050] text-white uppercase font-semibold px-3 py-2.5 text-[10px] tracking-wider whitespace-nowrap border-r border-[#000050]/30 last:border-r-0"
+                >
+                  {header}
+                </th>
+              ))}
             </tr>
           </thead>
 
@@ -633,6 +711,8 @@ const StudiesBLSTable = ({
                 return (
                   <React.Fragment key={pkg.packageName}>
                     {/* Package Row */}
+
+                    {/* CHECK BOX */}
                     <tr
                       onMouseEnter={() =>
                         setHoveredRow(`pkg-${pkg.packageName}`)
@@ -653,6 +733,13 @@ const StudiesBLSTable = ({
                     >
                       <td className="px-3 py-2.5 border-b border-r border-[#000050]/30 text-[10px] text-gray-800">
                         <div className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={checkedPackages.has(pkg.packageName)}
+                            onClick={(e) => e.stopPropagation()}
+                            onChange={() => toggleRowCheckbox(pkg.packageName)}
+                            className="w-3.5 h-3.5 mr-2 cursor-pointer"
+                          />
                           {isExpanded ? (
                             <ChevronDown className="w-10 h-10 text-purple-600" />
                           ) : (
